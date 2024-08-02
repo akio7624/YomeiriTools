@@ -254,7 +254,7 @@ TABLE PADDING의 크기는 PACKHEDR에서 나왔던 FILE LIST OFFSET에서 TABLE
 즉, 아카이브 파일의 패딩의 크기는 최소 0에서 최대 15입니다.
 
 # IDX 파일 분석
-![apk_01](img/idx_01.jpg)
+![idx_01](img/idx_01.jpg)
 
 idx 파일은 apk 파일과 매우 유사합니다. 확장자에서 알 수 있듯이 이 파일은 apk 파일의 파일들에 대한 인덱스를 저장합니다.
 * idx 파일에는 인덱스 한 파일의 PACKHEDR이 복사되어 나열되있습니다.
