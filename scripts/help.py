@@ -1,32 +1,22 @@
 HELP_CMD = """
-=================================================================
-     The collection of tools for modding <Nisekoi Yomeiri!?>     
-    It supports dumps, extractions, and patches of apk files.
-                   (Not an Android apk file)
-           This tool is experimental and not perfect.       
-            It's basically made for a specific game,
-           but it can also be useful for other games.
-=================================================================
+==================================================================
+   This is a tool for APK and IDX files found in certain games.
+==================================================================
 
-ymtools v1.0.0 Released on 2024.08.02
+ymtools v1.1.0 Released on 2024.11.02
 
 :: Simple Usage ::
-python main.py [-h] < DUMP_APK         <options...>
-                      | DUMP_IDX
-                      | UNPACK_APK
-                      | PACK_APK >
+ymtools.exe [-h] <SCRIPT_NAME> <options ...>
+
 -------------------------------------------------------
 -h\t\t\tprint this guide
 SCRIPT_NAME\t\tselect the script name you want to run
 
 
-:: Script Usage ::
-If you use exe file, replace "python main.py" to "ymtools.exe"
-
 """
 
 HELP_DUMP_APK = """
-python main.py DUMP_APK -i <input_apk_path> [-o <dump_output_path>] [-t <table|json>] [-q]
+ymtools.exe DUMP_APK -i <input_apk_path> [-o <dump_output_path>] [-t <table|json>] [-q]
 
 -i P\tpath P of the apk file to dump
 -o P\tsave the dump result as a file in path P
@@ -38,7 +28,7 @@ python main.py DUMP_APK -i <input_apk_path> [-o <dump_output_path>] [-t <table|j
 """
 
 HELP_DUMP_IDX = """
-python main.py DUMP_IDX -i <input_apk_path> [-o <dump_output_path>] [-t <table|json>] [-q]
+ymtools.exe DUMP_IDX -i <input_idx_path> [-o <dump_output_path>] [-t <table|json>] [-q]
 
 -i P\tpath P of the idx file to dump
 -o P\tsave the dump result as a file in path P
@@ -50,8 +40,7 @@ python main.py DUMP_IDX -i <input_apk_path> [-o <dump_output_path>] [-t <table|j
 """
 
 HELP_UNPACK_APK = """
-
-python main.py UNPACK_APK -i <input_apk_path> -o <dump_output_path> [-e <overwrite|skip>] [-d]
+ymtools.exe UNPACK_APK -i <input_apk_path> -o <output_directory_path> [-e <overwrite|skip>]
 
 -i P\tpath P of the apk file to unpack
 -o P\tsave the unpacked file in path P
@@ -59,11 +48,10 @@ python main.py UNPACK_APK -i <input_apk_path> -o <dump_output_path> [-e <overwri
     \t"overwrite" overwrites existing files
     \t"skip" leaves the existing file intact and skips
     \tthe default is "overwrite"
--d\tprint debug information
 """
 
-HELP_PACK_APK = """
-python main.py PACK_APK -i <input_apk_path> <directory_for_pack> [-x <input_idx_path>] -o <output_dir_path> [-d]
+HELP_PATCH_APK = """
+ymtools.exe PATCH_APK -i <input_apk_path> <directory_for_pack> -o <output_path>
 
 -i P Q\tpath P of the apk file to use for packing
       \tit is recommended to always use the original apk file.
@@ -71,10 +59,34 @@ python main.py PACK_APK -i <input_apk_path> <directory_for_pack> [-x <input_idx_
       \tpath Q of the directory to use for packing
       \tthe structure of the directory must remain the same as the apk
       \tfor faster speeds, I recommend that you keep only the changed files
--x P  \tpath P of the idx file to which you want to patch changes in apk file
 -o P  \tsave the packed apk file in path P
-      \tif you use -x option for idx file, the idx file is saved in path P
--d    \tprint debug information
+
+The 'PATCH' method only modifies information for files that have changed within an existing APK file.
+Therefore, a base APK file is required, and changes are applied to a copy of this file.
+This method is generally recommended when modifying files within an APK file.
+
 """
 
-HELP_ALL = HELP_CMD + HELP_DUMP_APK + HELP_DUMP_IDX + HELP_UNPACK_APK + HELP_PACK_APK
+HELP_PACK_APK = """
+ymtools.exe PACK_APK -i <directory_for_pack> -o <output_path>
+
+-i P  \tA listing of APK file paths to be used for generating the IDX file.
+-o P  \tsave the packed apk file in path P
+
+The 'PACK' method creates a new APK file using all files in the directory specified by the -i option.
+Therefore, a base APK file is not required, but this process may take longer if there are many files.
+
+"""
+
+HELP_MAKE_IDX = """
+ymtools.exe PACK_APK -i <input_apk_path ...> -o <output_path>
+
+-i P  \tpath P of the apk file to use for packing
+      \tthis file does not change.
+-o P  \tsave the idx file in path P
+      
+Generate IDX files from APK files separated by spaces.
+
+"""
+
+HELP_ALL = HELP_CMD + HELP_DUMP_APK + HELP_DUMP_IDX + HELP_UNPACK_APK + HELP_PATCH_APK + HELP_PACK_APK + HELP_MAKE_IDX

@@ -20,13 +20,18 @@ class Main:
         elif args.script == "DUMP_IDX":
             DumpIdx(args.i, args.o, args.t, args.q).dump()
         elif args.script == "UNPACK_APK":
-            UnpackApk(args.i, args.o, args.e, args.d).extract()
+            UnpackApk(args.i, args.o, args.e).extract()
+        elif args.script == "PATCH_APK":
+            PatchApk(args.i, args.o).patch()
         elif args.script == "PACK_APK":
-            PackApk(args.i, args.x, args.o, args.d).pack()
+            PackApk(args.i, args.o).pack()
+        elif args.script == "MAKE_IDX":
+            MakeIdx(args.i, args.o).make()
+        else:
+            print(help.HELP_ALL)
 
     def init_argparse(self):
-        self.parser = argparse.ArgumentParser(description="The collection of tools for modding <Nisekoi Yomeiri!?>", add_help=False)
-        # self.parser.add_argument("-h", action="store_true", help="Print information for all command")
+        self.parser = argparse.ArgumentParser(description="This is a tool for APK and IDX files found in certain games.", add_help=False)
         subparser = self.parser.add_subparsers(dest="script")
 
         parser_dump_all_apk = subparser.add_parser("DUMP_APK", add_help=False)
@@ -45,13 +50,18 @@ class Main:
         parser_unpack_apk.add_argument("-i", type=str, required=True)
         parser_unpack_apk.add_argument("-o", type=str, required=True)
         parser_unpack_apk.add_argument("-e", type=str, choices=["overwrite", "skip"], default="overwrite")
-        parser_unpack_apk.add_argument("-d", action="store_true")
 
-        parser_pack_fs_apk = subparser.add_parser("PACK_APK", add_help=False)
-        parser_pack_fs_apk.add_argument("-i", type=str, required=True, nargs=2)
-        parser_pack_fs_apk.add_argument("-x", type=str)
-        parser_pack_fs_apk.add_argument("-o", type=str, required=True)
-        parser_pack_fs_apk.add_argument("-d", action="store_true")
+        parser_patch_apk = subparser.add_parser("PATCH_APK", add_help=False)
+        parser_patch_apk.add_argument("-i", type=str, required=True, nargs=2)
+        parser_patch_apk.add_argument("-o", type=str, required=True)
+
+        parser_pack_apk = subparser.add_parser("PACK_APK", add_help=False)
+        parser_pack_apk.add_argument("-i", type=str, required=True)
+        parser_pack_apk.add_argument("-o", type=str, required=True)
+
+        parser_make_idx = subparser.add_parser("MAKE_IDX", add_help=False)
+        parser_make_idx.add_argument("-i", type=str, required=True, nargs="+")
+        parser_make_idx.add_argument("-o", type=str, required=True)
 
 
 if __name__ == "__main__":
