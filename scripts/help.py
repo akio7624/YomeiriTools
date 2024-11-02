@@ -70,7 +70,7 @@ This method is generally recommended when modifying files within an APK file.
 HELP_PACK_APK = """
 ymtools.exe PACK_APK -i <directory_for_pack> -o <output_path>
 
--i P  \tA listing of APK file paths to be used for generating the IDX file.
+-i P  \tpath P of the directory to use for packing
 -o P  \tsave the packed apk file in path P
 
 The 'PACK' method creates a new APK file using all files in the directory specified by the -i option.
@@ -81,8 +81,7 @@ Therefore, a base APK file is not required, but this process may take longer if 
 HELP_MAKE_IDX = """
 ymtools.exe PACK_APK -i <input_apk_path ...> -o <output_path>
 
--i P  \tpath P of the apk file to use for packing
-      \tthis file does not change.
+-i P  \tA listing of APK file paths to be used for generating the IDX file.
 -o P  \tsave the idx file in path P
       
 Generate IDX files from APK files separated by spaces.
