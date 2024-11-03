@@ -1,7 +1,4 @@
 import copy
-import struct
-
-from datatype.uint64 import uint64
 
 
 class BinaryReader:
@@ -9,7 +6,7 @@ class BinaryReader:
         if type(data) is not bytearray:
             raise BinaryManagerException(f"BinaryReader only accepts type bytearray")
 
-        self.__RAW: bytearray = data
+        self.__RAW: bytearray = copy.deepcopy(data)
         self.__OFFSET: int = -1
 
     def __getitem__(self, index: int):
@@ -60,6 +57,33 @@ class BinaryReader:
             self.__OFFSET += 1
 
         return tmp.decode("ascii")
+
+
+# TODO
+# class BinaryWriter:
+#     def append(self, value: int):
+#         self.__RAW.append(value)
+#
+#     def append_array(self, value: bytearray):
+#         self.__RAW.extend(value)
+# 
+#     def append_string(self, value: str):
+#         self.__RAW.extend(value.encode())
+#
+#     def set_bytes(self, value: int, pos: int):
+#         self.__RAW[pos] = value
+#
+#     def replace_bytes(self, arr: bytearray, pos: int):
+#         self.__RAW[pos:pos + len(arr)] = arr
+#
+#     def insert_bytes(self, pos: int, arr: bytearray):
+#         self.__RAW[pos:pos] = arr
+#
+#     def delete_bytes_range(self, s: int, length: int):
+#         del self.__RAW[s:s + length]
+#
+#     def remove_last(self):
+#         self.__RAW = self.__RAW[:self.size()-1]
 
 
 class BinaryManagerException(Exception):
