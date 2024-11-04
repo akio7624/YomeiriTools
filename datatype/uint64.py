@@ -6,16 +6,11 @@ class uint64:
     MIN_VALUE: Final[int] = 0
     MAX_VALUE: Final[int] = 18_446_744_073_709_551_615
 
-    def __init__(self, value: int | bytearray = None):
+    def __init__(self, value: int | bytearray = None, endian: str = "<"):
         self.__value: int = 0
 
         if value is not None:
-            if isinstance(value, bytearray):
-                self.from_bytearray(value)
-            elif isinstance(value, int):
-                self.from_int(value)
-            else:
-                raise Uint64Exception(f"Value must be bytearray or int.  this={type(value)}")
+            self.from_value(value, endian)
 
     def __int__(self):
         return self.__value
@@ -31,6 +26,14 @@ class uint64:
             raise Uint64Exception(f"Size must be a 8 bytes.  size={len(value)}")
 
         self.__value = struct.unpack(f"{endian}Q", value)[0]
+
+    def from_value(self, value: bytearray | int, endian: str = "<"):
+        if isinstance(value, bytearray):
+            self.from_bytearray(value, endian)
+        elif isinstance(value, int):
+            self.from_int(value)
+        else:
+            raise Uint64Exception(f"Value must be bytearray or int.  this={type(value)}")
 
     def to_int(self) -> int:
         return self.__int__()
