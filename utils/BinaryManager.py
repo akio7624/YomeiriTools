@@ -66,7 +66,7 @@ class BinaryReader:
 #
 #     def append_array(self, value: bytearray):
 #         self.__RAW.extend(value)
-# 
+#
 #     def append_string(self, value: str):
 #         self.__RAW.extend(value.encode())
 #
