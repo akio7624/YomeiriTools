@@ -9,20 +9,20 @@ class APK:
 
     class __ENDIANNESS:
         def __init__(self):
-            self.ENDIANNESS: chararray = chararray(size=8)
+            self.SIGNATURE: chararray = chararray(size=8)
             self.TABLE_SIZE: uint64 = uint64(0)
 
-            self.ENDIANNESS_ofs = 0
+            self.SIGNATURE_ofs = 0
             self.TABLE_SIZE_ofs = 0
 
-        def from_bytearray(self, src: bytearray, ofs: int):
+        def from_bytearray(self, ofs: int, src: bytearray):
             if len(src) != 16:
                 raise TableException(self, f"The table size must be 16.  this={len(src)}")
 
-            self.ENDIANNESS.from_bytearray(src[:8])
-            self.ENDIANNESS_ofs = ofs
-            if str(self.ENDIANNESS) != "ENDILTLE":
-                raise TableException(self, f"ENDIANNESS must be 'ENDILTLE'.  this={str(self.ENDIANNESS)}")
+            self.SIGNATURE.from_bytearray(src[:8])
+            self.SIGNATURE_ofs = ofs
+            if str(self.SIGNATURE) != "ENDILTLE":
+                raise TableException(self, f"ENDIANNESS must be 'ENDILTLE'.  this={str(self.SIGNATURE)}")
 
             self.TABLE_SIZE.from_bytearray(src[8:])
             self.TABLE_SIZE_ofs = ofs + 8
