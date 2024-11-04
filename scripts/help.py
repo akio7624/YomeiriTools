@@ -1,9 +1,11 @@
-HELP_CMD = """
+from utils.ProgramInfo import *
+
+HELP_CMD = f"""
 ==================================================================
    This is a tool for APK and IDX files found in certain games.
 ==================================================================
 
-ymtools v1.1.0 Released on 2024.11.02
+{TOOL_NAME} v{TOOL_VERSION} Released on {TOOL_UPDATE_DATE.strftime('%Y.%m.%d')}
 
 :: Simple Usage ::
 ymtools.exe [-h] <SCRIPT_NAME> <options ...>
