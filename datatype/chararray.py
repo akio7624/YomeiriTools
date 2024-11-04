@@ -9,12 +9,7 @@ class chararray:
         self.__value: list[str] = ["\0" for _ in range(size)]
 
         if value is not None:
-            if isinstance(value, bytearray):
-                self.from_bytearray(value)
-            elif isinstance(value, str):
-                self.from_str(value)
-            else:
-                raise CharArrayException(f"Value must be bytearray or str.  this={type(value)}")
+            self.from_value(value)
 
     def __str__(self):
         return "".join(self.__value)
@@ -34,6 +29,14 @@ class chararray:
             raise CharArrayException(f"chararray supports only ASCII characters.")
 
         self.__value = list(value.decode("ascii")) + ["\0" for _ in range(self.__size - len(value))]
+
+    def from_value(self, value: str | bytearray):
+        if isinstance(value, bytearray):
+            self.from_bytearray(value)
+        elif isinstance(value, str):
+            self.from_str(value)
+        else:
+            raise CharArrayException(f"Value must be bytearray or str.  this={type(value)}")
 
     def to_str(self) -> str:
         return self.__str__()
