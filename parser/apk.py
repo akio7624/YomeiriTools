@@ -1,27 +1,32 @@
 from datatype.chararray import chararray
-from datatype.uint32 import uint32
+from datatype.uint64 import uint64
 
 
-class ENDIANNESS:
+class APK:
+
     def __init__(self):
-        self.ENDIANNESS: chararray = chararray(size=8)
-        self.TABLE_SIZE: uint32 = uint32(0)
+        self.ENDIANNESS = self.__ENDIANNESS()
 
-    def from_bytearray(self, src: bytearray):
-        if len(src) != 16:
-            raise TableException(self, f"The table size must be 16.  this={len(src)}")
+    class __ENDIANNESS:
+        def __init__(self):
+            self.ENDIANNESS: chararray = chararray(size=8)
+            self.TABLE_SIZE: uint64 = uint64(0)
 
-        self.ENDIANNESS.from_bytearray(src[:8])
-        if str(self.ENDIANNESS) != "ENDILTLE":
-            raise TableException(self, f"ENDIANNESS must be 'ENDILTLE'.  this={str(self.ENDIANNESS)}")
+        def from_bytearray(self, src: bytearray):
+            if len(src) != 16:
+                raise TableException(self, f"The table size must be 16.  this={len(src)}")
 
-        self.TABLE_SIZE.from_bytearray(src[8:])
-        if int(self.TABLE_SIZE) != 0:
-            raise TableException(self, f"TABLE_SIZE must be 0.  this={int(self.TABLE_SIZE)}")
+            self.ENDIANNESS.from_bytearray(src[:8])
+            if str(self.ENDIANNESS) != "ENDILTLE":
+                raise TableException(self, f"ENDIANNESS must be 'ENDILTLE'.  this={str(self.ENDIANNESS)}")
 
-    def to_bytearray(self) -> bytearray:
-        # TODO
-        pass
+            self.TABLE_SIZE.from_bytearray(src[8:])
+            if int(self.TABLE_SIZE) != 0:
+                raise TableException(self, f"TABLE_SIZE must be 0.  this={int(self.TABLE_SIZE)}")
+
+        def to_bytearray(self) -> bytearray:
+            # TODO
+            pass
 
 
 class TableException(Exception):
