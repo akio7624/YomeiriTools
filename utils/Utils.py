@@ -1,8 +1,11 @@
 def bytes2hex(v: bytearray) -> str:
+    if len(v) == 0:
+        return "-"
+
     result = ""
 
-    for i in range(0, len(v), 8):
-        result += " ".join(f"{b:02X}" for b in v[i:i+8]).zfill(8)
+    for i in range(0, len(v), 16):
+        result += " ".join(f"{b:02X}" for b in v[i:i+16]).zfill(8)
         result += "\n"
 
     return result.strip()
