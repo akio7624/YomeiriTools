@@ -12,6 +12,7 @@ class APK:
         self.PACKTOC = self.__PACKTOC()
         self.PACKFSLS = self.__PACKFSLS()
         self.GENESTRT = self.__GENESTRT()
+        self.GENEEOF = self.__GENEEOF()
 
     class __ENDIANNESS:
         def __init__(self):
@@ -420,6 +421,37 @@ class APK:
             partE = self.PADDING
 
             return partA + partB + partC + partD + partE
+
+    class __GENEEOF:
+        def __init__(self):
+            self.SIGNATURE: chararray = chararray(size=8)
+            self.TABLE_SIZE: uint64 = uint64(0)
+            self.TABLE_END_PADDING: bytearray = bytearray()
+
+            self.SIGNATURE_ofs: int = 0
+            self.TABLE_SIZE_ofs: int = 0
+            self.TABLE_END_PADDING_ofs: int = 0
+
+        def from_bytearray(self, ofs: int, src: bytearray):
+            self.SIGNATURE.from_bytearray(src[:8])
+            self.SIGNATURE_ofs = ofs
+            if str(self.SIGNATURE) != "GENEEOF ":
+                raise TableException(self, f"SIGNATURE must be 'GENEEOF '.  this={str(self.SIGNATURE)}")
+
+            self.TABLE_SIZE.from_bytearray(src[8:16])
+            self.TABLE_SIZE_ofs = ofs + 8
+            if int(self.TABLE_SIZE) != 0:
+                raise TableException(self, f"TABLE_SIZE must be 0.  this={int(self.TABLE_SIZE)}")
+
+            self.TABLE_END_PADDING = src[16:]
+            self.TABLE_END_PADDING_ofs = ofs + 16
+
+        def to_bytearray(self) -> bytearray:
+            return (
+                        self.SIGNATURE.to_bytearray() +
+                        self.TABLE_SIZE.to_bytearray() +
+                        self.TABLE_END_PADDING
+                    )
 
 
 class TableException(Exception):
