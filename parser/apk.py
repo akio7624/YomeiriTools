@@ -11,6 +11,7 @@ class APK:
         self.PACKHEDR = self.__PACKHEDR()
         self.PACKTOC = self.__PACKTOC()
         self.PACKFSLS = self.__PACKFSLS()
+        self.GENESTRT = self.__GENESTRT()
 
     class __ENDIANNESS:
         def __init__(self):
@@ -269,13 +270,13 @@ class APK:
             part_A: bytearray = (
                         self.SIGNATURE.to_bytearray() +
                         self.TABLE_SIZE.to_bytearray() +
-                        self.TOC_SEG_SIZE.to_bytearray() +
-                        self.TOC_SEG_COUNT.to_bytearray() +
+                        self.ARCHIVE_SEG_SIZE.to_bytearray() +
+                        self.ARCHIVE_SEG_COUNT.to_bytearray() +
                         self.unknown_1
                     )
 
             part_B = bytearray()
-            for seg in self.TOC_SEGMENT_LIST:
+            for seg in self.ARCHIVE_SEGMENT_LIST:
                 part_B += seg.to_bytearray()
 
             part_C: bytearray = self.PADDING
@@ -321,10 +322,108 @@ class APK:
                     self.HASH
                 )
 
+    class __GENESTRT:
+        def __init__(self):
+            self.SIGNATURE: chararray = chararray(size=8)
+            self.TABLE_SIZE_1: uint64 = uint64(0)
+            self.FILENAME_COUNT: uint32 = uint32(0)
+            self.unknown_1: bytearray = bytearray()
+            self.FILE_NAMES_OFFSET: uint32 = uint32(0)
+            self.TABLE_SIZE_2: uint32 = uint32(0)
+            self.FILENAME_OFFSET_LIST: list[uint32] = list()
+            self.FILENAME_OFFSET_LIST_PADDING: bytearray = bytearray()
+            self.FILE_NAMES: list[str] = list()
+            self.PADDING: bytearray = bytearray()
+
+            self.SIGNATURE_ofs: int = 0
+            self.TABLE_SIZE_1_ofs: int = 0
+            self.FILENAME_COUNT_ofs: int = 0
+            self.unknown_1_ofs: int = 0
+            self.FILE_NAMES_OFFSET_ofs: int = 0
+            self.TABLE_SIZE_2_ofs: int = 0
+            self.FILENAME_OFFSET_LIST_ofs: int = 0
+            self.FILENAME_OFFSET_LIST_PADDING_ofs: int = 0
+            self.FILE_NAMES_ofs: int = 0
+            self.PADDING_ofs: int = 0
+
+            self.FILE_NAMES_SIZE: int = 0
+
+        def from_bytearray(self, ofs: int, src: bytearray):
+            self.SIGNATURE.from_bytearray(src[:8])
+            self.SIGNATURE_ofs = ofs
+            if str(self.SIGNATURE) != "GENESTRT":
+                raise TableException(self, f"SIGNATURE must be 'GENESTRT'.  this={str(self.SIGNATURE)}")
+
+            self.TABLE_SIZE_1.from_bytearray(src[8:16])
+            self.TABLE_SIZE_1_ofs = ofs + 8
+            if len(src) != int(self.TABLE_SIZE_1) + 16:
+                raise TableException(self, f"The table size mismatch.  this={len(src)} expected={int(self.TABLE_SIZE_1) + 16}")
+
+            self.FILENAME_COUNT.from_bytearray(src[16:20])
+            self.FILENAME_COUNT_ofs = ofs + 16
+
+            self.unknown_1 = src[20:24]
+            self.unknown_1_ofs = ofs + 20
+
+            self.FILE_NAMES_OFFSET.from_bytearray(src[24:28])
+            self.FILE_NAMES_OFFSET_ofs = ofs + 24
+
+            self.TABLE_SIZE_2.from_bytearray(src[28:32])
+            self.TABLE_SIZE_2_ofs = ofs + 28
+            if int(self.TABLE_SIZE_1) != int(self.TABLE_SIZE_2):
+                raise TableException(self, f"The TABLE_SIZE_2 mismatch.  this={int(self.TABLE_SIZE_2)} expected={int(self.TABLE_SIZE_1)}")
+
+            seg_ofs = 32
+            self.FILENAME_OFFSET_LIST_ofs = ofs + 32
+            for i in range(int(self.FILENAME_COUNT)):
+                self.FILENAME_OFFSET_LIST.append(uint32(src[seg_ofs:seg_ofs + 4]))
+                seg_ofs += 4
+
+            self.FILENAME_OFFSET_LIST_PADDING = src[seg_ofs:seg_ofs + get_table_padding_count(seg_ofs)]
+            self.FILENAME_OFFSET_LIST_PADDING_ofs = ofs + seg_ofs
+
+            seg_ofs += len(self.FILENAME_OFFSET_LIST_PADDING)
+            self.FILE_NAMES_ofs = ofs + seg_ofs
+            for i in range(int(self.FILENAME_COUNT)):
+                filename: bytearray = bytearray()
+                while True:
+                    filename += src[seg_ofs:seg_ofs + 1]
+                    self.FILE_NAMES_SIZE += len(filename)
+                    seg_ofs += 1
+                    if filename[-1] == 0:
+                        break
+                self.FILE_NAMES.append(filename.decode("ascii"))
+
+            self.PADDING = src[seg_ofs:seg_ofs + get_table_padding_count(seg_ofs)]
+            self.PADDING_ofs = ofs + seg_ofs
+
+        def to_bytearray(self) -> bytearray:
+            partA = (
+                        self.SIGNATURE.to_bytearray() +
+                        self.TABLE_SIZE_1.to_bytearray() +
+                        self.FILENAME_COUNT.to_bytearray() +
+                        self.unknown_1 +
+                        self.FILE_NAMES_OFFSET.to_bytearray() +
+                        self.TABLE_SIZE_2.to_bytearray()
+                    )
+
+            partB = bytearray()
+            for o in self.FILENAME_OFFSET_LIST:
+                partB += o.to_bytearray()
+
+            partC = self.FILENAME_OFFSET_LIST_PADDING
+
+            partD = bytearray()
+            for s in self.FILE_NAMES:
+                partD += bytearray(s.encode("ascii"))
+
+            partE = self.PADDING
+
+            return partA + partB + partC + partD + partE
+
 
 class TableException(Exception):
     def __init__(self, table: object, message: str):
         table_name = table.__class__.__name__
         self.message = f"table {table_name}: {message}"
         super().__init__(self.message)
-
