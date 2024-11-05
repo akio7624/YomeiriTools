@@ -22,6 +22,19 @@ def get_table_padding_count(current: int) -> int:
     return 16 - (current % 16)
 
 
+def get_table_end_padding_count(current: int) -> int:
+    if current % 2048 == 0:
+        return 0
+
+    n = int(current / 2048)
+
+    while True:
+        block_size = (n * 2048)
+        if current <= block_size:
+            return block_size - current
+        n += 1
+
+
 def identifier2desc(v: int) -> str:
     if v == 0:
         return "raw file"
