@@ -40,6 +40,12 @@ class DumpApk:
         reader.seek(tmp)
         self.APK.PACKFSLS.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
 
+        tmp = reader.tell()
+        reader.skip(8)
+        size = int(uint64(reader.get_bytes(8))) + 16
+        reader.seek(tmp)
+        self.APK.GENESTRT.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
+
         self.dump_table()
 
     def dump_table(self):
@@ -142,6 +148,34 @@ class DumpApk:
                 result.write("\n".join(["    " + line for line in str(table).splitlines()]))
                 result.write("\n\n")
                 table.clear_rows()
+
+        result.write("\n\n")
+
+        result.write("* GENESTRT table\n")
+        table.add_row(["SIGNATURE", "char[]", 8, str(self.APK.GENESTRT.SIGNATURE), bytes2hex(self.APK.GENESTRT.SIGNATURE.to_bytearray()), hexoffset(self.APK.GENESTRT.SIGNATURE_ofs), "-"])
+        table.add_row(["TABLE SIZE 1", "uint64", 8, int(self.APK.GENESTRT.TABLE_SIZE_1), bytes2hex(self.APK.GENESTRT.TABLE_SIZE_1.to_bytearray()), hexoffset(self.APK.GENESTRT.TABLE_SIZE_1_ofs), "-"])
+        table.add_row(["FILENAME COUNT", "uint32", 8, int(self.APK.GENESTRT.FILENAME_COUNT), bytes2hex(self.APK.GENESTRT.FILENAME_COUNT.to_bytearray()), hexoffset(self.APK.GENESTRT.FILENAME_COUNT_ofs), "-"])
+        table.add_row(["unknown 1", "-", 4, "-", bytes2hex(self.APK.GENESTRT.unknown_1), hexoffset(self.APK.GENESTRT.unknown_1_ofs), "-"])
+        table.add_row(["FILE NAMES OFFSET", "uint32", 4, int(self.APK.GENESTRT.FILE_NAMES_OFFSET), bytes2hex(self.APK.GENESTRT.FILE_NAMES_OFFSET.to_bytearray()), hexoffset(self.APK.GENESTRT.FILE_NAMES_OFFSET_ofs), "-"])
+        table.add_row(["TABLE SIZE 2", "uint32", 4, int(self.APK.GENESTRT.TABLE_SIZE_2), bytes2hex(self.APK.GENESTRT.TABLE_SIZE_2.to_bytearray()), hexoffset(self.APK.GENESTRT.TABLE_SIZE_2_ofs), "-"])
+        table.add_row(["FILENAME OFFSET LIST", "uint32[]", len(self.APK.GENESTRT.FILENAME_OFFSET_LIST) * 4, "-", "-", hexoffset(self.APK.GENESTRT.FILENAME_OFFSET_LIST_ofs), "-"])
+        table.add_row(["FILENAME OFFSET LIST PADDING", "byte[]", len(self.APK.GENESTRT.FILENAME_OFFSET_LIST_PADDING), "-", bytes2hex(self.APK.GENESTRT.FILENAME_OFFSET_LIST_PADDING), hexoffset(self.APK.GENESTRT.FILENAME_OFFSET_LIST_PADDING_ofs), "-"])
+        table.add_row(["FILE_NAMES", "string[]", self.APK.GENESTRT.FILE_NAMES_SIZE, "-", "-", hexoffset(self.APK.GENESTRT.FILE_NAMES_ofs), "-"])
+        table.add_row(["PADDING", "byte[]", len(self.APK.GENESTRT.PADDING), "-", bytes2hex(self.APK.GENESTRT.PADDING), hexoffset(self.APK.GENESTRT.PADDING_ofs), "-"])
+        result.write(str(table))
+        table.clear_rows()
+
+        result.write("\n\n")
+
+        result.write("    * FILENAME OFFSET and FILENAME (Trailing null character removed)\n")
+        file_names_table = PrettyTable()
+        file_names_table.field_names = ["INDEX", "FILENAME OFFSET", "FILENAME"]
+        file_names_table.align["FILENAME"] = "l"
+        for i in range(int(self.APK.GENESTRT.FILENAME_COUNT)):
+            file_names_table.add_row([i, int(self.APK.GENESTRT.FILENAME_OFFSET_LIST[i]), self.APK.GENESTRT.FILE_NAMES[i][:-1]])
+
+        for line in str(file_names_table).splitlines():
+            result.write("    " + line + "\n")
 
         os.makedirs(os.path.dirname(self.OUTPUT_DUMP_PATH), exist_ok=True)
         with open(self.OUTPUT_DUMP_PATH, "w") as f:
