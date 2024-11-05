@@ -46,6 +46,9 @@ class DumpApk:
         reader.seek(tmp)
         self.APK.GENESTRT.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
 
+        size = get_table_end_padding_count(reader.tell() + 16) + 16
+        self.APK.GENEEOF.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
+
         self.dump_table()
 
     def dump_table(self):
@@ -119,7 +122,7 @@ class DumpApk:
                 if i > 20:
                     break  # TODO for test
 
-        result.write("\n\n")
+        result.write("\n\n\n")
 
         result.write("* PACKFSLS table\n")
         table.add_row(["SIGNATURE", "char[]", 8, str(self.APK.PACKFSLS.SIGNATURE), bytes2hex(self.APK.PACKFSLS.SIGNATURE.to_bytearray()), hexoffset(self.APK.PACKFSLS.SIGNATURE_ofs), "-"])
@@ -149,7 +152,7 @@ class DumpApk:
                 result.write("\n\n")
                 table.clear_rows()
 
-        result.write("\n\n")
+        result.write("\n\n\n")
 
         result.write("* GENESTRT table\n")
         table.add_row(["SIGNATURE", "char[]", 8, str(self.APK.GENESTRT.SIGNATURE), bytes2hex(self.APK.GENESTRT.SIGNATURE.to_bytearray()), hexoffset(self.APK.GENESTRT.SIGNATURE_ofs), "-"])
@@ -176,6 +179,17 @@ class DumpApk:
 
         for line in str(file_names_table).splitlines():
             result.write("    " + line + "\n")
+
+        result.write("\n\n\n")
+
+        result.write("* GENEEOF table\n")
+        table.add_row(["SIGNATURE", "char[]", 8, str(self.APK.GENEEOF.SIGNATURE), bytes2hex(self.APK.GENEEOF.SIGNATURE.to_bytearray()), hexoffset(self.APK.GENEEOF.SIGNATURE_ofs), "-"])
+        table.add_row(["TABLE SIZE", "uint64", 8, int(self.APK.GENEEOF.TABLE_SIZE), bytes2hex(self.APK.GENEEOF.TABLE_SIZE.to_bytearray()), hexoffset(self.APK.GENEEOF.TABLE_SIZE_ofs), "-"])
+        table.add_row(["TABLE END PADDING", "byte[]", len(self.APK.GENEEOF.TABLE_END_PADDING), "-", bytes2hex(self.APK.GENEEOF.TABLE_END_PADDING), hexoffset(self.APK.GENEEOF.TABLE_END_PADDING_ofs), "-"])
+        result.write(str(table))
+        table.clear_rows()
+
+        result.write("\n\n\n")
 
         os.makedirs(os.path.dirname(self.OUTPUT_DUMP_PATH), exist_ok=True)
         with open(self.OUTPUT_DUMP_PATH, "w") as f:
