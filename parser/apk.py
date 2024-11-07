@@ -13,7 +13,7 @@ class APK:
         self.PACKFSLS = self.__PACKFSLS()
         self.GENESTRT = self.__GENESTRT()
         self.GENEEOF = self.__GENEEOF()
-        self.ROOT_FILES = self.__ROOT_FILE()
+        self.ROOT_FILES = self.__ROOT_FILES()
 
     class __ENDIANNESS:
         def __init__(self):
@@ -472,7 +472,7 @@ class APK:
         def to_bytearray(self) -> bytearray:
             return self.DATA + self.PADDING
 
-    class __ROOT_FILE:
+    class __ROOT_FILES:
         def __init__(self):
             self.FILE_LIST: list[APK._FILE] = list()
             self.PADDING: bytearray = bytearray()
