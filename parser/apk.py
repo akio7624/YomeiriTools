@@ -7,15 +7,15 @@ from utils.Utils import get_table_padding_count
 class APK:
 
     def __init__(self):
-        self.ENDIANNESS = self.__ENDIANNESS()
-        self.PACKHEDR = self.__PACKHEDR()
-        self.PACKTOC = self.__PACKTOC()
-        self.PACKFSLS = self.__PACKFSLS()
-        self.GENESTRT = self.__GENESTRT()
-        self.GENEEOF = self.__GENEEOF()
-        self.ROOT_FILES = self.__ROOT_FILES()
+        self.ENDIANNESS = self._ENDIANNESS()
+        self.PACKHEDR = self._PACKHEDR()
+        self.PACKTOC = self._PACKTOC()
+        self.PACKFSLS = self._PACKFSLS()
+        self.GENESTRT = self._GENESTRT()
+        self.GENEEOF = self._GENEEOF()
+        self.ROOT_FILES = self._ROOT_FILES()
 
-    class __ENDIANNESS:
+    class _ENDIANNESS:
         def __init__(self):
             self.SIGNATURE: chararray = chararray(size=8)
             self.TABLE_SIZE: uint64 = uint64(0)
@@ -40,7 +40,7 @@ class APK:
         def to_bytearray(self) -> bytearray:
             return self.SIGNATURE.to_bytearray() + self.TABLE_SIZE.to_bytearray()
 
-    class __PACKHEDR:
+    class _PACKHEDR:
         def __init__(self):
             self.SIGNATURE: chararray = chararray(size=8)
             self.TABLE_SIZE: uint64 = uint64(0)
@@ -92,14 +92,14 @@ class APK:
                         self.HASH
                     )
 
-    class __PACKTOC:
+    class _PACKTOC:
         def __init__(self):
             self.SIGNATURE: chararray = chararray(size=8)
             self.TABLE_SIZE: uint64 = uint64(0)
             self.TOC_SEG_SIZE: uint32 = uint32(0)
             self.TOC_SEG_COUNT: uint32 = uint32(0)
             self.unknown_1: bytearray = bytearray()
-            self.TOC_SEGMENT_LIST: list["__PACKTOC.__TOC_SEGMENT"] = []
+            self.TOC_SEGMENT_LIST: list[APK._PACKTOC._TOC_SEGMENT] = []
             self.PADDING: bytearray = bytearray()
 
             self.SIGNATURE_ofs: int = 0
@@ -135,7 +135,7 @@ class APK:
             seg_ofs = 32
             self.TOC_SEGMENT_LIST_ofs = ofs + 32
             for i in range(int(self.TOC_SEG_COUNT)):
-                seg = self.__TOC_SEGMENT()
+                seg = self._TOC_SEGMENT()
                 seg.from_bytearray(ofs=ofs + seg_ofs, src=src[seg_ofs:seg_ofs + int(self.TOC_SEG_SIZE)])
                 self.TOC_SEGMENT_LIST.append(seg)
                 seg_ofs += int(self.TOC_SEG_SIZE)
@@ -160,7 +160,7 @@ class APK:
 
             return part_A + part_B + part_C
 
-        class __TOC_SEGMENT:
+        class _TOC_SEGMENT:
             def __init__(self):
                 self.IDENTIFIER: uint32 = uint32(0)
                 self.NAME_IDX: uint32 = uint32(0)
@@ -217,14 +217,14 @@ class APK:
                     self.FILE_ZSIZE.to_bytearray()
                 )
 
-    class __PACKFSLS:
+    class _PACKFSLS:
         def __init__(self):
             self.SIGNATURE: chararray = chararray(size=8)
             self.TABLE_SIZE: uint64 = uint64(0)
             self.ARCHIVE_SEG_COUNT: uint32 = uint32(0)
             self.ARCHIVE_SEG_SIZE: uint32 = uint32(0)
             self.unknown_1: bytearray = bytearray()
-            self.ARCHIVE_SEGMENT_LIST: list["__PACKFSLS.__ARCHIVE_SEGMENT"] = []
+            self.ARCHIVE_SEGMENT_LIST: list[APK._PACKFSLS._ARCHIVE_SEGMENT] = []
             self.PADDING: bytearray = bytearray()
 
             self.SIGNATURE_ofs: int = 0
@@ -257,10 +257,10 @@ class APK:
             self.unknown_1 = src[24:32]
             self.unknown_1_ofs = ofs + 24
 
-            seg_ofs = 32  # TODO
+            seg_ofs = 32
             self.ARCHIVE_SEGMENT_LIST_ofs = ofs + 32
             for i in range(int(self.ARCHIVE_SEG_COUNT)):
-                seg = self.__ARCHIVE_SEGMENT()
+                seg = self._ARCHIVE_SEGMENT()
                 seg.from_bytearray(ofs=ofs + seg_ofs, src=src[seg_ofs:seg_ofs + int(self.ARCHIVE_SEG_SIZE)])
                 self.ARCHIVE_SEGMENT_LIST.append(seg)
                 seg_ofs += int(self.ARCHIVE_SEG_SIZE)
@@ -285,7 +285,7 @@ class APK:
 
             return part_A + part_B + part_C
 
-        class __ARCHIVE_SEGMENT:
+        class _ARCHIVE_SEGMENT:
             def __init__(self):
                 self.NAME_IDX: uint32 = uint32(0)
                 self.ZERO: bytearray = bytearray()
@@ -324,7 +324,7 @@ class APK:
                     self.HASH
                 )
 
-    class __GENESTRT:
+    class _GENESTRT:
         def __init__(self):
             self.SIGNATURE: chararray = chararray(size=8)
             self.TABLE_SIZE_1: uint64 = uint64(0)
@@ -423,7 +423,7 @@ class APK:
 
             return partA + partB + partC + partD + partE
 
-    class __GENEEOF:
+    class _GENEEOF:
         def __init__(self):
             self.SIGNATURE: chararray = chararray(size=8)
             self.TABLE_SIZE: uint64 = uint64(0)
@@ -472,7 +472,7 @@ class APK:
         def to_bytearray(self) -> bytearray:
             return self.DATA + self.PADDING
 
-    class __ROOT_FILES:
+    class _ROOT_FILES:
         def __init__(self):
             self.FILE_LIST: list[APK._FILE] = list()
             self.PADDING: bytearray = bytearray()
