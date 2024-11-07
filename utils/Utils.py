@@ -35,6 +35,19 @@ def get_table_end_padding_count(current: int) -> int:
         n += 1
 
 
+def get_root_file_padding_cnt(size: int) -> int:
+    if size % 512 == 0:
+        return 0
+
+    n = int(size / 512)
+
+    while True:
+        block_size = (n * 512)
+        if size <= block_size:
+            return block_size - size
+        n += 1
+
+
 def identifier2desc(v: int) -> str:
     if v == 0:
         return "raw file"
