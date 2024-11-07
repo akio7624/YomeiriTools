@@ -49,6 +49,22 @@ class DumpApk:
         size = get_table_end_padding_count(reader.tell() + 16) + 16
         self.APK.GENEEOF.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
 
+        if int(self.APK.PACKTOC.TOC_SEG_COUNT) > 0:
+            for seg in self.APK.PACKTOC.TOC_SEGMENT_LIST:
+                if int(seg.IDENTIFIER) == 1:
+                    continue
+                reader.seek(int(seg.FILE_OFFSET))
+                if int(seg.IDENTIFIER) == 0:  # raw file
+                    filesize = int(seg.FILE_SIZE)
+                elif int(seg.IDENTIFIER) == 512:  # zlib compressed file
+                    filesize = int(seg.FILE_ZSIZE)
+                else:
+                    filesize = None
+
+                self.APK.ROOT_FILES.add_from_bytearray(ofs=int(seg.FILE_OFFSET), size=filesize, src=reader.get_bytes(filesize + get_root_file_padding_cnt(filesize)))
+
+        self.APK.ROOT_FILES.sort()
+
         self.dump_table()
 
     def dump_table(self):
@@ -190,6 +206,15 @@ class DumpApk:
         table.clear_rows()
 
         result.write("\n\n\n")
+
+        result.write("* ROOT FILES\n")
+
+        for file in self.APK.ROOT_FILES.FILE_LIST:
+            table.add_row(["FILE", "byte[]", len(file.DATA), "-", bytes2hex(file.DATA[:32]) + "\n...", hexoffset(file.DATA_ofs), "-"])
+            table.add_row(["PADDING", "byte[]", len(file.PADDING), "-", bytes2hex(file.PADDING[:32]) + "\n...", hexoffset(file.PADDING_ofs), "-"])
+            result.write(str(table))
+            result.write("\n\n")
+            table.clear_rows()
 
         os.makedirs(os.path.dirname(self.OUTPUT_DUMP_PATH), exist_ok=True)
         with open(self.OUTPUT_DUMP_PATH, "w") as f:
