@@ -28,6 +28,9 @@ class BinaryReader:
     def tell(self) -> int:
         return self.__OFFSET
 
+    def EOF(self) -> bool:
+        return self.__OFFSET + 1 >= self.size()
+
     def get_byte(self) -> int:
         if self.__OFFSET < self.size():
             result = self.__RAW[self.__OFFSET]
