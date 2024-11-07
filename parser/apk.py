@@ -13,6 +13,7 @@ class APK:
         self.PACKFSLS = self.__PACKFSLS()
         self.GENESTRT = self.__GENESTRT()
         self.GENEEOF = self.__GENEEOF()
+        self.ROOT_FILES = self.__ROOT_FILE()
 
     class __ENDIANNESS:
         def __init__(self):
@@ -452,6 +453,44 @@ class APK:
                         self.TABLE_SIZE.to_bytearray() +
                         self.TABLE_END_PADDING
                     )
+
+    class _FILE:
+        def __init__(self):
+            self.DATA: bytearray = bytearray()
+            self.PADDING: bytearray = bytearray()
+
+            self.DATA_ofs: int = 0
+            self.PADDING_ofs: int = 0
+
+        def from_bytearray(self, ofs: int, size: int, src: bytearray):
+            self.DATA = src[:size]
+            self.DATA_ofs = ofs
+
+            self.PADDING = src[size:]
+            self.PADDING_ofs = ofs + size
+
+        def to_bytearray(self) -> bytearray:
+            return self.DATA + self.PADDING
+
+    class __ROOT_FILE:
+        def __init__(self):
+            self.FILE_LIST: list[APK._FILE] = list()
+
+        def add_from_bytearray(self, ofs: int, size: int, src: bytearray):
+            file = APK._FILE()
+            file.from_bytearray(ofs, size, src)
+            self.FILE_LIST.append(file)
+
+        def to_bytearray(self) -> bytearray:
+            result = bytearray()
+
+            for file in self.FILE_LIST:
+                result += file.to_bytearray()
+
+            return result
+
+        def sort(self):
+            self.FILE_LIST.sort(key=lambda x: x.DATA_ofs)
 
 
 class TableException(Exception):
