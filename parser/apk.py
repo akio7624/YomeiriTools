@@ -475,6 +475,9 @@ class APK:
     class __ROOT_FILE:
         def __init__(self):
             self.FILE_LIST: list[APK._FILE] = list()
+            self.PADDING: bytearray = bytearray()
+
+            self.PADDING_ofs: int = 0
 
         def add_from_bytearray(self, ofs: int, size: int, src: bytearray):
             file = APK._FILE()
