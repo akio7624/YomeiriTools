@@ -35,6 +35,7 @@ def get_table_end_padding_count(current: int) -> int:
         n += 1
 
 
+# padding for single root file
 def get_root_file_padding_cnt(size: int) -> int:
     if size % 512 == 0:
         return 0
@@ -43,6 +44,20 @@ def get_root_file_padding_cnt(size: int) -> int:
 
     while True:
         block_size = (n * 512)
+        if size <= block_size:
+            return block_size - size
+        n += 1
+
+
+# padding for all root files
+def get_root_files_padding_count(size: int) -> int:
+    if size % 2048 == 0:
+        return 0
+
+    n = int(size / 2048)
+
+    while True:
+        block_size = (n * 2048)
         if size <= block_size:
             return block_size - size
         n += 1
