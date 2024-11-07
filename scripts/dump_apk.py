@@ -49,6 +49,8 @@ class DumpApk:
         size = get_table_end_padding_count(reader.tell() + 16) + 16
         self.APK.GENEEOF.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
 
+        tmp = reader.tell()
+        root_files_size = 0
         if int(self.APK.PACKTOC.TOC_SEG_COUNT) > 0:
             for seg in self.APK.PACKTOC.TOC_SEGMENT_LIST:
                 if int(seg.IDENTIFIER) == 1:
@@ -60,10 +62,20 @@ class DumpApk:
                     filesize = int(seg.FILE_ZSIZE)
                 else:
                     filesize = None
+                block_size = filesize + get_root_file_padding_cnt(filesize)
+                root_files_size += block_size
 
-                self.APK.ROOT_FILES.add_from_bytearray(ofs=int(seg.FILE_OFFSET), size=filesize, src=reader.get_bytes(filesize + get_root_file_padding_cnt(filesize)))
+                self.APK.ROOT_FILES.add_from_bytearray(ofs=int(seg.FILE_OFFSET), size=filesize, src=reader.get_bytes(block_size))
 
-        self.APK.ROOT_FILES.sort()
+            self.APK.ROOT_FILES.sort()
+
+            reader.seek(tmp + root_files_size)
+            if reader.EOF():
+                self.dump_table()
+                return
+
+            self.APK.ROOT_FILES.PADDING_ofs = reader.tell()
+            self.APK.ROOT_FILES.PADDING = reader.get_bytes(get_root_files_padding_count(root_files_size))
 
         self.dump_table()
 
@@ -207,14 +219,23 @@ class DumpApk:
 
         result.write("\n\n\n")
 
-        result.write("* ROOT FILES (sorted by offset)\n")
+        if len(self.APK.ROOT_FILES.FILE_LIST) > 0:
+            result.write("* ROOT FILES (sorted by offset)\n")
 
-        for file in self.APK.ROOT_FILES.FILE_LIST:
-            table.add_row(["FILE", "byte[]", len(file.DATA), "-", bytes2hex(file.DATA[:32]) + "\n...", hexoffset(file.DATA_ofs), "-"])
-            table.add_row(["PADDING", "byte[]", len(file.PADDING), "-", bytes2hex(file.PADDING[:32]) + "\n...", hexoffset(file.PADDING_ofs), "-"])
-            result.write(str(table))
-            result.write("\n\n")
-            table.clear_rows()
+            for file in self.APK.ROOT_FILES.FILE_LIST:
+                table.add_row(["FILE", "byte[]", len(file.DATA), "-", bytes2hex(file.DATA[:32]) + "\n...", hexoffset(file.DATA_ofs), "-"])
+                table.add_row(["PADDING", "byte[]", len(file.PADDING), "-", bytes2hex(file.PADDING[:32]) + "\n...", hexoffset(file.PADDING_ofs), "-"])
+                result.write(str(table))
+                result.write("\n\n")
+                table.clear_rows()
+
+            if len(self.APK.ROOT_FILES.PADDING) > 0:
+                table.add_row(["PADDING", "byte[]", len(self.APK.ROOT_FILES.PADDING), "-", bytes2hex(self.APK.ROOT_FILES.PADDING), hexoffset(self.APK.ROOT_FILES.PADDING_ofs), "-"])
+                result.write(str(table))
+                result.write("\n\n\n")
+                table.clear_rows()
+
+
 
         os.makedirs(os.path.dirname(self.OUTPUT_DUMP_PATH), exist_ok=True)
         with open(self.OUTPUT_DUMP_PATH, "w") as f:
