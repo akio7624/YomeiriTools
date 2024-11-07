@@ -207,7 +207,7 @@ class DumpApk:
 
         result.write("\n\n\n")
 
-        result.write("* ROOT FILES\n")
+        result.write("* ROOT FILES (sorted by offset)\n")
 
         for file in self.APK.ROOT_FILES.FILE_LIST:
             table.add_row(["FILE", "byte[]", len(file.DATA), "-", bytes2hex(file.DATA[:32]) + "\n...", hexoffset(file.DATA_ofs), "-"])
