@@ -495,6 +495,203 @@ class APK:
         def sort(self):
             self.FILE_LIST.sort(key=lambda x: x.DATA_ofs)
 
+    # smae with _ROOT_FILES
+    class _ARCHIVE_FILES:
+        def __init__(self):
+            self.FILE_LIST: list[APK._FILE] = list()
+            self.PADDING: bytearray = bytearray()
+
+            self.PADDING_ofs: int = 0
+
+        def add_from_bytearray(self, ofs: int, size: int, src: bytearray):
+            file = APK._FILE()
+            file.from_bytearray(ofs, size, src)
+            self.FILE_LIST.append(file)
+
+        def to_bytearray(self) -> bytearray:
+            result = bytearray()
+
+            for file in self.FILE_LIST:
+                result += file.to_bytearray()
+
+            return result
+
+        def sort(self):
+            self.FILE_LIST.sort(key=lambda x: x.DATA_ofs)
+
+    class _PACKFSHD:
+        def __init__(self):
+            self.SIGNATURE: chararray = chararray(size=8)
+            self.TABLE_SIZE: uint64 = uint64(0)
+            self.unknown_1: bytearray = bytearray()
+            self.FILE_SEG_SIZE_1: uint32 = uint32(0)
+            self.FILE_SEG_COUNT: uint32 = uint32(0)
+            self.FILE_SEG_SIZE_2: uint32 = uint32(0)
+            self.unknown_2: bytearray = bytearray()
+            self.unknown_3: bytearray = bytearray()
+            self.FILE_SEGMENT_LIST: list[APK._PACKFSHD.ARCHIVE_FILE_SEGMENT] = []
+            self.PADDING: bytearray = bytearray()
+
+            self.SIGNATURE_ofs: int = 0
+            self.TABLE_SIZE_ofs: int = 0
+            self.unknown_1_ofs: int = 0
+            self.FILE_SEG_SIZE_1_ofs: int = 0
+            self.FILE_SEG_COUNT_ofs: int = 0
+            self.FILE_SEG_SIZE_2_ofs: int = 0
+            self.unknown_2_ofs: int = 0
+            self.unknown_3_ofs: int = 0
+            self.FILE_SEGMENT_LIST_ofs: int = 0
+            self.PADDING_ofs: int = 0
+
+        def from_bytearray(self, ofs: int, src: bytearray):
+            self.SIGNATURE.from_bytearray(src[:8])
+            self.SIGNATURE_ofs = ofs
+            if str(self.SIGNATURE) != "PACKFSHD":
+                raise TableException(self, f"SIGNATURE must be 'PACKFSHD'.  this='{str(self.SIGNATURE)}'")
+
+            self.TABLE_SIZE.from_bytearray(src[8:16])
+            self.TABLE_SIZE_ofs = ofs + 8
+            if len(src) != int(self.TABLE_SIZE) + 16:
+                raise TableException(self, f"The table size mismatch.  this={len(src)} expected={int(self.TABLE_SIZE) + 16}")
+
+            self.unknown_1 = src[16:20]
+            self.unknown_1_ofs = ofs + 16
+
+            self.FILE_SEG_SIZE_1.from_bytearray(src[20:24])
+            self.FILE_SEG_SIZE_1_ofs = ofs + 20
+            if int(self.FILE_SEG_SIZE_1) != 32:
+                raise TableException(self, f"The FILE_SEG_SIZE_1 mismatch.  this={int(self.FILE_SEG_SIZE_1)}, expected=32")
+
+            self.FILE_SEG_COUNT.from_bytearray(src[24:28])
+            self.FILE_SEG_COUNT_ofs = ofs + 24
+
+            self.FILE_SEG_SIZE_2.from_bytearray(src[28:32])
+            self.FILE_SEG_SIZE_2_ofs = ofs + 28
+            if int(self.FILE_SEG_SIZE_1) != int(self.FILE_SEG_SIZE_2):
+                raise TableException(self, f"The FILE_SEG_SIZE_2 mismatch with FILE_SEG_SIZE_1.  this={int(self.FILE_SEG_SIZE_2)}, expected={int(self.FILE_SEG_SIZE_1)}")
+
+            self.unknown_2 = src[32:36]
+            self.unknown_2_ofs = ofs + 32
+
+            self.unknown_3 = src[36:48]
+            self.unknown_3_ofs = ofs + 36
+
+            seg_ofs = 48
+            self.FILE_SEGMENT_LIST_ofs = ofs + 48
+            for i in range(int(self.FILE_SEG_COUNT)):
+                seg = self.ARCHIVE_FILE_SEGMENT()
+                seg.from_bytearray(ofs=ofs + seg_ofs, src=src[seg_ofs:seg_ofs + int(self.FILE_SEG_SIZE_1)])
+                self.FILE_SEGMENT_LIST.append(seg)
+                seg_ofs += int(self.FILE_SEG_SIZE_1)
+
+            self.PADDING = src[seg_ofs:seg_ofs + get_table_padding_count(seg_ofs)]
+            self.PADDING_ofs = ofs + seg_ofs
+
+        def to_bytearray(self) -> bytearray:
+            part_A: bytearray = (
+                    self.SIGNATURE.to_bytearray() +
+                    self.TABLE_SIZE.to_bytearray() +
+                    self.unknown_1 +
+                    self.FILE_SEG_SIZE_1.to_bytearray() +
+                    self.FILE_SEG_COUNT.to_bytearray() +
+                    self.FILE_SEG_SIZE_2.to_bytearray() +
+                    self.unknown_2 +
+                    self.unknown_3
+            )
+
+            part_B = bytearray()
+            for seg in self.FILE_SEGMENT_LIST:
+                part_B += seg.to_bytearray()
+
+            part_C: bytearray = self.PADDING
+
+            return part_A + part_B + part_C
+
+        class ARCHIVE_FILE_SEGMENT:
+            def __init__(self):
+                self.NAME_IDX: uint32 = uint32(0)
+                self.ZIP: uint32 = uint32(0)
+                self.FILE_OFFSET: uint64 = uint64(0)  # for file
+                self.FILE_SIZE: uint64 = uint64(0)
+                self.FILE_ZSIZE: uint64 = uint64(0)
+
+                self.NAME_IDX_ofs: int = 0
+                self.ZIP_ofs: int = 0
+                self.FILE_OFFSET_ofs: int = 0
+                self.FILE_SIZE_ofs: int = 0
+                self.FILE_ZSIZE_ofs: int = 0
+
+            def from_bytearray(self, ofs: int, src: bytearray):
+                self.NAME_IDX.from_bytearray(src[:4])
+                self.NAME_IDX_ofs = ofs
+
+                self.ZIP.from_bytearray(src[4:8])
+                self.ZIP_ofs = ofs + 4
+
+                self.FILE_OFFSET.from_bytearray(src[8:16])
+                self.FILE_OFFSET_ofs = ofs + 8
+
+                self.FILE_SIZE.from_bytearray(src[16:24])
+                self.FILE_SIZE_ofs = ofs + 16
+
+                self.FILE_ZSIZE.from_bytearray(src[24:32])
+                self.FILE_ZSIZE_ofs = ofs + 24
+
+            def to_bytearray(self) -> bytearray:
+                return (
+                        self.NAME_IDX.to_bytearray() +
+                        self.ZIP.to_bytearray() +
+                        self.FILE_OFFSET.to_bytearray() +
+                        self.FILE_SIZE.to_bytearray() +
+                        self.FILE_ZSIZE.to_bytearray()
+                )
+
+    class ARCHIVE:
+        def __init__(self):
+            self.ENDIANNESS = APK._ENDIANNESS()
+            self.PACKFSHD = APK._PACKFSHD()
+            self.GENESTRT = APK._GENESTRT()
+            self.GENEEOF = APK._GENEEOF()
+            self.FILES = APK._ARCHIVE_FILES()
+            self.PADDING: bytearray = bytearray()
+
+            self.ARCHIVE_ofs: int = 0
+            self.PADDING_ofs: int = 0
+
+        def to_bytearray(self) -> bytearray:
+            return (
+                        self.ENDIANNESS.to_bytearray() +
+                        self.PACKFSHD.to_bytearray() +
+                        self.GENESTRT.to_bytearray() +
+                        self.GENEEOF.to_bytearray() +
+                        self.FILES.to_bytearray() +
+                        self.PADDING
+                    )
+
+    class _ARCHIVES:
+        def __init__(self):
+            self.ARCHIVE_LIST: list[APK.ARCHIVE] = list()
+            self.PADDING: bytearray = bytearray()
+
+            self.PADDING_ofs: int = 0
+
+        def add_from_object(self, archive: object):
+            if not isinstance(archive, APK.ARCHIVE):
+                raise TableException(self, f"parameter archive must be instance of APK._ARCHIVE.  this={archive.__class__.__name__}")
+
+            self.ARCHIVE_LIST.append(archive)
+
+        def to_bytearray(self) -> bytearray:
+            result = bytearray()
+
+            for archive in self.ARCHIVE_LIST:
+                result += archive.to_bytearray()
+
+            return result
+
+        def sort(self):
+            self.ARCHIVE_LIST.sort(key=lambda x: x.ARCHIVE_ofs)
+
 
 class TableException(Exception):
     def __init__(self, table: object, message: str):
