@@ -237,14 +237,25 @@ class IDX:
                 self.FILE_ZSIZE_ofs = ofs + 32
 
             def to_bytearray(self) -> bytearray:
-                return (
-                    self.IDENTIFIER.to_bytearray() +
-                    self.NAME_IDX.to_bytearray() +
-                    self.ZERO +
-                    self.FILE_OFFSET.to_bytearray() +
-                    self.FILE_SIZE.to_bytearray() +
-                    self.FILE_ZSIZE.to_bytearray()
-                )
+                if int(self.IDENTIFIER) == 1:
+                    return (
+                            self.IDENTIFIER.to_bytearray() +
+                            self.NAME_IDX.to_bytearray() +
+                            self.ZERO +
+                            self.ENTRY_INDEX.to_bytearray() +
+                            self.ENTRY_COUNT.to_bytearray() +
+                            self.FILE_SIZE.to_bytearray() +
+                            self.FILE_ZSIZE.to_bytearray()
+                    )
+                else:
+                    return (
+                        self.IDENTIFIER.to_bytearray() +
+                        self.NAME_IDX.to_bytearray() +
+                        self.ZERO +
+                        self.FILE_OFFSET.to_bytearray() +
+                        self.FILE_SIZE.to_bytearray() +
+                        self.FILE_ZSIZE.to_bytearray()
+                    )
 
     class _PACKFSLS:
         def __init__(self):
@@ -301,8 +312,8 @@ class IDX:
             part_A: bytearray = (
                         self.SIGNATURE.to_bytearray() +
                         self.TABLE_SIZE.to_bytearray() +
-                        self.ARCHIVE_SEG_SIZE.to_bytearray() +
                         self.ARCHIVE_SEG_COUNT.to_bytearray() +
+                        self.ARCHIVE_SEG_SIZE.to_bytearray() +
                         self.unknown_1
                     )
 
