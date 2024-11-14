@@ -19,8 +19,12 @@ class DumpApk:
         self.APK = APK()
         self.file_size = 0
         
-    def dump(self):
+    def dump(self, debug_no_dump: bool = False):
         self.read()
+
+        if debug_no_dump:
+            return
+
         if self.DUMP_TYPE == "table":
             self.dump_table()
         elif self.DUMP_TYPE == "json":
