@@ -1,6 +1,10 @@
 def bytes2hex(v: bytearray) -> str:
     if len(v) == 0:
         return "-"
+    elif len(v) == 1:
+        return "00"
+    elif len(v) == 2:
+        return "00 00"
 
     result = ""
 
@@ -63,12 +67,52 @@ def get_root_files_padding_count(size: int) -> int:
         n += 1
 
 
+def get_archive_file_padding_cnt(size: int) -> int:
+    if size % 16 == 0:
+        return 0
+
+    n = int(size / 16)
+
+    while True:
+        block_size = (n * 16)
+        if size <= block_size:
+            return block_size - size
+        n += 1
+
+
+def get_archive_padding_count(pad_type: int, size: int) -> int:
+    if pad_type == 1:
+        unit = 2048
+    elif pad_type == 2:
+        unit = 512
+    else:
+        unit = None
+
+    if size % unit == 0:
+        return 0
+
+    n = int(size / unit)
+
+    while True:
+        block_size = (n * unit)
+        if size <= block_size:
+            return block_size - size
+        n += 1
+
+
 def identifier2desc(v: int) -> str:
     if v == 0:
         return "raw file"
     elif v == 1:
         return "directory"
     elif v == 512:
+        return "zlib compressed file"
+
+
+def zip2desc(v: int) -> str:
+    if v == 0:
+        return "raw file"
+    elif v == 2:
         return "zlib compressed file"
 
 
