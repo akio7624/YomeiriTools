@@ -62,7 +62,7 @@ class BinaryReader:
         return tmp.decode("ascii")
 
 
-# TODO
+# TODO BinaryWriter
 # class BinaryWriter:
 #     def append(self, value: int):
 #         self.__RAW.append(value)

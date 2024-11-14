@@ -18,26 +18,24 @@ SCRIPT_NAME\t\tselect the script name you want to run
 """
 
 HELP_DUMP_APK = """
-ymtools.exe DUMP_APK -i <input_apk_path> [-o <dump_output_path>] [-t <table|json>] [-q]
+ymtools.exe DUMP_APK -i <input_apk_path> [-o <dump_output_path>] [-t <table>] [-q]
 
 -i P\tpath P of the apk file to dump
 -o P\tsave the dump result as a file in path P
     \tif you omit this option, it will only print to the terminal
 -t T\tspecifies the type of dump. the default is "table"
     \t"table" only print important information about the included file
-    \t"json" analyzes all areas of the apk file and print them in json format
 -q\tdoes not print dump results with or without option -o
 """
 
 HELP_DUMP_IDX = """
-ymtools.exe DUMP_IDX -i <input_idx_path> [-o <dump_output_path>] [-t <table|json>] [-q]
+ymtools.exe DUMP_IDX -i <input_idx_path> [-o <dump_output_path>] [-t <table>] [-q]
 
 -i P\tpath P of the idx file to dump
 -o P\tsave the dump result as a file in path P
     \tif you omit this option, it will only print to the terminal
 -t T\tspecifies the type of dump. the default is "table"
     \t"table" only print important information about the included file
-    \t"json" analyzes all areas of the apk file and print them in json format
 -q\tdoes not print dump results with or without option -o
 """
 

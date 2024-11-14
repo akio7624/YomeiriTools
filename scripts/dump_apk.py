@@ -24,6 +24,7 @@ class DumpApk:
         if self.DUMP_TYPE == "table":
             self.dump_table()
         elif self.DUMP_TYPE == "json":
+            print(f"JSON dumps are not supported yet.")
             pass  # TODO self.dump_json()
 
     def read(self):

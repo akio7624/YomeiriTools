@@ -16,24 +16,22 @@ ymtools.exe [-h] <SCRIPT_NAME> <옵션 ...>
 SCRIPT_NAME  실행할 스크립트 이름 선택.
 
 
-ymtools.exe DUMP_APK -i <input_apk_path> [-o <dump_output_path>] [-t <table|json>] [-q]
+ymtools.exe DUMP_APK -i <input_apk_path> [-o <dump_output_path>] [-t <table>] [-q]
 
 -i P       덤프할 APK 파일의 경로 P
 -o P       덤프 결과를 경로 P의 파일로 저장한다.
            이 옵션을 생략하면 표준 출력으로만 출력된다.
 -t T       덤프의 유형을 지정한다. 기본값은 "table"이다.
            "table"은 포함된 파일에 대한 중요한 정보만 출력한다.
-           "json"은 APK 파일의 모든 영역을 분석하여 JSON 형식으로 출력한다.
 -q         덤프 결과를 출력하지 않는다. -o 옵션이 있든 없든 상관없다.
 
-ymtools.exe DUMP_IDX -i <input_idx_path> [-o <dump_output_path>] [-t <table|json>] [-q]
+ymtools.exe DUMP_IDX -i <input_idx_path> [-o <dump_output_path>] [-t <table>] [-q]
 
 -i P       덤프할 APK 파일의 경로 P
 -o P       덤프 결과를 경로 P의 파일로 저장한다.
            이 옵션을 생략하면 표준 출력으로만 출력된다.
 -t T       덤프의 유형을 지정한다. 기본값은 "table"이다.
            "table"은 포함된 파일에 대한 중요한 정보만 출력한다.
-           "json"은 APK 파일의 모든 영역을 분석하여 JSON 형식으로 출력한다.
 -q         덤프 결과를 출력하지 않는다. -o 옵션이 있든 없든 상관없다.
 
 ymtools.exe UNPACK_APK -i <input_apk_path> -o <output_directory_path> [-e <overwrite|skip>]
