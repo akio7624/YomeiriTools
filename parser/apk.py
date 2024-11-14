@@ -14,6 +14,19 @@ class APK:
         self.GENESTRT = self._GENESTRT()
         self.GENEEOF = self._GENEEOF()
         self.ROOT_FILES = self._ROOT_FILES()
+        self.ARCHIVES = self._ARCHIVES()
+
+    def to_bytearray(self) -> bytearray:
+        return (
+                    self.ENDIANNESS.to_bytearray() +
+                    self.PACKHEDR.to_bytearray() +
+                    self.PACKTOC.to_bytearray() +
+                    self.PACKFSLS.to_bytearray() +
+                    self.GENESTRT.to_bytearray() +
+                    self.GENEEOF.to_bytearray() +
+                    self.ROOT_FILES.to_bytearray() +
+                    self.ARCHIVES.to_bytearray()
+                )
 
     class _ENDIANNESS:
         def __init__(self):
@@ -114,7 +127,7 @@ class APK:
             self.SIGNATURE.from_bytearray(src[:8])
             self.SIGNATURE_ofs = ofs
             if str(self.SIGNATURE) != "PACKTOC ":
-                raise TableException(self, f"SIGNATURE must be 'PACKTOC'.  this='{str(self.SIGNATURE)}'")
+                raise TableException(self, f"SIGNATURE must be 'PACKTOC '.  this='{str(self.SIGNATURE)}'")
 
             self.TABLE_SIZE.from_bytearray(src[8:16])
             self.TABLE_SIZE_ofs = ofs + 8
@@ -224,7 +237,7 @@ class APK:
             self.ARCHIVE_SEG_COUNT: uint32 = uint32(0)
             self.ARCHIVE_SEG_SIZE: uint32 = uint32(0)
             self.unknown_1: bytearray = bytearray()
-            self.ARCHIVE_SEGMENT_LIST: list[APK._PACKFSLS._ARCHIVE_SEGMENT] = []
+            self.ARCHIVE_SEGMENT_LIST: list[APK._PACKFSLS._ARCHIVE_SEGMENT] = list()
             self.PADDING: bytearray = bytearray()
 
             self.SIGNATURE_ofs: int = 0
