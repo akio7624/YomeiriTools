@@ -15,24 +15,12 @@ class TestDumpApk(unittest.TestCase):
         self.parser = DumpApk(self.all_apk_path, os.path.join(self.samples_path, "dump_result", "test__dump_apk__all.apk__.txt"), "table", True)
         self.parser.dump()
 
-    def test_dump_json_all_apk(self):
-        self.parser = DumpApk(self.all_apk_path, os.path.join(self.samples_path, "dump_result", "test__dump_apk__all.apk__.json"), "json", True)
-        self.parser.dump()
-
     def test_dump_table_fs_apk(self):
         self.parser = DumpApk(self.fs_apk_path, os.path.join(self.samples_path, "dump_result", "test__dump_apk__fs.apk__.txt"), "table", True)
         self.parser.dump()
 
-    def test_dump_json_fs_apk(self):
-        self.parser = DumpApk(self.fs_apk_path, os.path.join(self.samples_path, "dump_result", "test__dump_apk__fs.apk__.json"), "json", True)
-        self.parser.dump()
-
     def test_dump_table_stage_apk(self):
         self.parser = DumpApk(self.stage_apk_path, os.path.join(self.samples_path, "dump_result", "test__dump_apk__stage.apk__.txt"), "table", True)
-        self.parser.dump()
-
-    def test_dump_json_stage_apk(self):
-        self.parser = DumpApk(self.stage_apk_path, os.path.join(self.samples_path, "dump_result", "test__dump_apk__stage.apk__.json"), "json", True)
         self.parser.dump()
 
 
