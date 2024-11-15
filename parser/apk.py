@@ -1,7 +1,10 @@
+import hashlib
+
 from datatype.chararray import chararray
 from datatype.uint32 import uint32
 from datatype.uint64 import uint64
-from utils.Utils import get_table_padding_count
+from utils.BinaryManager import BinaryReader
+from utils.Utils import *
 
 
 class APK:
@@ -715,6 +718,149 @@ class APK:
 
         def sort(self):
             self.ARCHIVE_LIST.sort(key=lambda x: x.ARCHIVE_ofs)
+
+
+class APKReader:
+    def __init__(self, INPUT_APK_PATH: str):
+        self.__INPUT_APK_PATH = INPUT_APK_PATH
+        self.__APK = APK()
+        self.__original_md5 = None
+
+    def read(self):
+        with open(self.__INPUT_APK_PATH, "rb") as f:
+            reader = BinaryReader(bytearray(f.read()))
+            reader.seek(0)
+
+        self.__original_md5 = hashlib.md5(reader.get_raw()).hexdigest()
+
+        print("Reading ENDIANNESS table...")
+        self.__APK.ENDIANNESS.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=16))
+
+        print("Reading PACKHEDR table...")
+        self.__APK.PACKHEDR.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=48))
+
+        print("Reading PACKTOC table...")
+        tmp = reader.tell()
+        reader.skip(8)
+        size = int(uint64(reader.get_bytes(8))) + 16
+        reader.seek(tmp)
+        self.__APK.PACKTOC.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
+
+        print("Reading PACKFSLS table...")
+        tmp = reader.tell()
+        reader.skip(8)
+        size = int(uint64(reader.get_bytes(8))) + 16
+        reader.seek(tmp)
+        self.__APK.PACKFSLS.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
+
+        print("Reading GENESTRT table...")
+        tmp = reader.tell()
+        reader.skip(8)
+        size = int(uint64(reader.get_bytes(8))) + 16
+        reader.seek(tmp)
+        self.__APK.GENESTRT.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
+
+        print("Reading GENEEOF table...")
+        size = get_table_end_padding_count(reader.tell() + 16) + 16
+        self.__APK.GENEEOF.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
+
+        print("Reading ROOT files...")
+        tmp = reader.tell()
+        root_files_size = 0
+        if len(self.__APK.PACKTOC.TOC_SEGMENT_LIST) > 0:
+            for seg in self.__APK.PACKTOC.TOC_SEGMENT_LIST:
+                if int(seg.IDENTIFIER) == 1:
+                    continue
+                reader.seek(int(seg.FILE_OFFSET))
+                if int(seg.IDENTIFIER) == 0:  # raw file
+                    filesize = int(seg.FILE_SIZE)
+                elif int(seg.IDENTIFIER) == 512:  # zlib compressed file
+                    filesize = int(seg.FILE_ZSIZE)
+                else:
+                    filesize = None
+                block_size = filesize + get_root_file_padding_cnt(filesize)
+                root_files_size += block_size
+
+                self.__APK.ROOT_FILES.add_from_bytearray(ofs=int(seg.FILE_OFFSET), size=filesize, src=reader.get_bytes(block_size))
+
+            self.__APK.ROOT_FILES.sort()
+
+        reader.seek(tmp + root_files_size)
+        if reader.EOF():
+            return
+
+        self.__APK.ROOT_FILES.PADDING_ofs = reader.tell()
+        self.__APK.ROOT_FILES.PADDING = reader.get_bytes(get_root_files_padding_count(root_files_size))
+
+        if reader.EOF():
+            raise TableException(self, f"If ROOT_FILES_PADDING exists, EOF cannot appear")
+
+        for idx, seg in enumerate(self.__APK.PACKFSLS.ARCHIVE_SEGMENT_LIST):
+            print(f"Reading archive {idx + 1}/{len(self.__APK.PACKFSLS.ARCHIVE_SEGMENT_LIST)}...")
+            archive = self.__APK.ARCHIVE()
+            ARCHIVE_OFFSET = int(seg.ARCHIVE_OFFSET)
+            ARCHIVE_SIZE = int(seg.ARCHIVE_SIZE)
+
+            reader.seek(ARCHIVE_OFFSET)
+
+            print(f"    Reading ENDIANNESS table...")
+            archive.ENDIANNESS.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=16))
+
+            print(f"    Reading PACKFSHD table...")
+            tmp = reader.tell()
+            reader.skip(8)
+            size = int(uint64(reader.get_bytes(8))) + 16
+            reader.seek(tmp)
+            archive.PACKFSHD.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
+
+            print(f"    Reading GENESTRT table...")
+            tmp = reader.tell()
+            reader.skip(8)
+            size = int(uint64(reader.get_bytes(8))) + 16
+            reader.seek(tmp)
+            archive.GENESTRT.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
+
+            print(f"    Reading GENEEOF table...")
+            archive.GENEEOF.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=16))
+
+            print(f"    Reading files...")
+            tmp = reader.tell()
+            archive_files_size = 0
+            if len(archive.PACKFSHD.FILE_SEGMENT_LIST) > 0:
+                for file_seg in archive.PACKFSHD.FILE_SEGMENT_LIST:
+                    real_file_offset = ARCHIVE_OFFSET + int(file_seg.FILE_OFFSET)
+                    reader.seek(real_file_offset)
+
+                    if int(file_seg.ZIP) == 0:  # raw file
+                        filesize = int(file_seg.FILE_SIZE)
+                    elif int(file_seg.ZIP) == 2:  # zlib compressed file
+                        filesize = int(file_seg.FILE_ZSIZE)
+                    else:
+                        filesize = None
+
+                    block_size = filesize + get_archive_file_padding_cnt(filesize)
+                    archive_files_size += block_size
+
+                    archive.FILES.add_from_bytearray(ofs=real_file_offset, size=filesize, src=reader.get_bytes(block_size))
+
+                archive.FILES.sort()
+
+            reader.seek(tmp + archive_files_size)
+
+            if not reader.EOF():
+                size = get_archive_padding_count(int(self.__APK.PACKHEDR.ARCHIVE_PADDING_TYPE), ARCHIVE_SIZE)
+                archive.PADDING_ofs = reader.tell()
+                archive.PADDING = reader.get_bytes(size=size)
+
+            self.__APK.ARCHIVES.add_from_object(archive)
+
+        self.__APK.ARCHIVES.sort()
+
+    def get_apk(self) -> APK:
+        return self.__APK
+
+    def get_original_md5(self) -> str:
+        return self.__original_md5
 
 
 class TableException(Exception):

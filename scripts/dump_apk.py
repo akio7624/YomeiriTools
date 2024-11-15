@@ -4,9 +4,7 @@ from io import StringIO
 
 from prettytable import PrettyTable
 
-from datatype.uint64 import uint64
-from utils.BinaryManager import BinaryReader
-from parser.apk import APK, TableException
+from parser.apk import APKReader
 from utils.ProgramInfo import *
 from utils.Utils import *
 
@@ -17,14 +15,18 @@ class DumpApk:
         self.OUTPUT_DUMP_PATH: str = o
         self.DUMP_TYPE: str = "table" if t == "table" else "json"
         self.IS_QUIET: bool = q
-        self.APK = APK()
+        self.APK = None
         self.file_size = 0
 
         self.__original_md5 = None
         self.__dumped_md5 = None
 
     def dump(self, debug_no_dump: bool = False):
-        self.read()
+        apk_reader = APKReader(self.INPUT_APK_PATH)
+        apk_reader.read()
+        self.APK = apk_reader.get_apk()
+
+        self.__original_md5 = apk_reader.get_original_md5()
         self.__dumped_md5 = hashlib.md5(self.APK.to_bytearray()).hexdigest()
 
         if self.__original_md5 != self.__dumped_md5:
@@ -39,137 +41,6 @@ class DumpApk:
         elif self.DUMP_TYPE == "json":
             print(f"JSON dumps are not supported yet.")
             pass  # TODO self.dump_json()
-
-    def read(self):
-        with open(self.INPUT_APK_PATH, "rb") as f:
-            reader = BinaryReader(bytearray(f.read()))
-            reader.seek(0)
-            self.file_size = reader.size()
-
-        self.__original_md5 = hashlib.md5(reader.get_raw()).hexdigest()
-
-        print("Reading ENDIANNESS table...")
-        self.APK.ENDIANNESS.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=16))
-
-        print("Reading PACKHEDR table...")
-        self.APK.PACKHEDR.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=48))
-
-        print("Reading PACKTOC table...")
-        tmp = reader.tell()
-        reader.skip(8)
-        size = int(uint64(reader.get_bytes(8))) + 16
-        reader.seek(tmp)
-        self.APK.PACKTOC.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
-
-        print("Reading PACKFSLS table...")
-        tmp = reader.tell()
-        reader.skip(8)
-        size = int(uint64(reader.get_bytes(8))) + 16
-        reader.seek(tmp)
-        self.APK.PACKFSLS.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
-
-        print("Reading GENESTRT table...")
-        tmp = reader.tell()
-        reader.skip(8)
-        size = int(uint64(reader.get_bytes(8))) + 16
-        reader.seek(tmp)
-        self.APK.GENESTRT.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
-
-        print("Reading GENEEOF table...")
-        size = get_table_end_padding_count(reader.tell() + 16) + 16
-        self.APK.GENEEOF.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
-
-        print("Reading ROOT files...")
-        tmp = reader.tell()
-        root_files_size = 0
-        if len(self.APK.PACKTOC.TOC_SEGMENT_LIST) > 0:
-            for seg in self.APK.PACKTOC.TOC_SEGMENT_LIST:
-                if int(seg.IDENTIFIER) == 1:
-                    continue
-                reader.seek(int(seg.FILE_OFFSET))
-                if int(seg.IDENTIFIER) == 0:  # raw file
-                    filesize = int(seg.FILE_SIZE)
-                elif int(seg.IDENTIFIER) == 512:  # zlib compressed file
-                    filesize = int(seg.FILE_ZSIZE)
-                else:
-                    filesize = None
-                block_size = filesize + get_root_file_padding_cnt(filesize)
-                root_files_size += block_size
-
-                self.APK.ROOT_FILES.add_from_bytearray(ofs=int(seg.FILE_OFFSET), size=filesize, src=reader.get_bytes(block_size))
-
-            self.APK.ROOT_FILES.sort()
-
-        reader.seek(tmp + root_files_size)
-        if reader.EOF():
-            return
-
-        self.APK.ROOT_FILES.PADDING_ofs = reader.tell()
-        self.APK.ROOT_FILES.PADDING = reader.get_bytes(get_root_files_padding_count(root_files_size))
-
-        if reader.EOF():
-            raise TableException(self, f"If ROOT_FILES_PADDING exists, EOF cannot appear")
-
-        for idx, seg in enumerate(self.APK.PACKFSLS.ARCHIVE_SEGMENT_LIST):
-            print(f"Reading archive {idx+1}/{len(self.APK.PACKFSLS.ARCHIVE_SEGMENT_LIST)}...")
-            archive = self.APK.ARCHIVE()
-            ARCHIVE_OFFSET = int(seg.ARCHIVE_OFFSET)
-            ARCHIVE_SIZE = int(seg.ARCHIVE_SIZE)
-
-            reader.seek(ARCHIVE_OFFSET)
-
-            print(f"    Reading ENDIANNESS table...")
-            archive.ENDIANNESS.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=16))
-
-            print(f"    Reading PACKFSHD table...")
-            tmp = reader.tell()
-            reader.skip(8)
-            size = int(uint64(reader.get_bytes(8))) + 16
-            reader.seek(tmp)
-            archive.PACKFSHD.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
-
-            print(f"    Reading GENESTRT table...")
-            tmp = reader.tell()
-            reader.skip(8)
-            size = int(uint64(reader.get_bytes(8))) + 16
-            reader.seek(tmp)
-            archive.GENESTRT.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
-
-            print(f"    Reading GENEEOF table...")
-            archive.GENEEOF.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=16))
-
-            print(f"    Reading files...")
-            tmp = reader.tell()
-            archive_files_size = 0
-            if len(archive.PACKFSHD.FILE_SEGMENT_LIST) > 0:
-                for file_seg in archive.PACKFSHD.FILE_SEGMENT_LIST:
-                    real_file_offset = ARCHIVE_OFFSET + int(file_seg.FILE_OFFSET)
-                    reader.seek(real_file_offset)
-
-                    if int(file_seg.ZIP) == 0:  # raw file
-                        filesize = int(file_seg.FILE_SIZE)
-                    elif int(file_seg.ZIP) == 2:  # zlib compressed file
-                        filesize = int(file_seg.FILE_ZSIZE)
-                    else:
-                        filesize = None
-
-                    block_size = filesize + get_archive_file_padding_cnt(filesize)
-                    archive_files_size += block_size
-
-                    archive.FILES.add_from_bytearray(ofs=real_file_offset, size=filesize, src=reader.get_bytes(block_size))
-
-                archive.FILES.sort()
-
-            reader.seek(tmp + archive_files_size)
-
-            if not reader.EOF():
-                size = get_archive_padding_count(int(self.APK.PACKHEDR.ARCHIVE_PADDING_TYPE), ARCHIVE_SIZE)
-                archive.PADDING_ofs = reader.tell()
-                archive.PADDING = reader.get_bytes(size=size)
-
-            self.APK.ARCHIVES.add_from_object(archive)
-
-        self.APK.ARCHIVES.sort()
 
     def dump_table(self):
         print("Start dumping...")
