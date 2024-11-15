@@ -2,7 +2,6 @@ import argparse
 from scripts import help
 from scripts.dump_apk import DumpApk
 from scripts.dump_idx import DumpIdx
-from scripts.pack_apk import PackApk
 from scripts.unpack_apk import UnpackApk
 
 
@@ -21,12 +20,12 @@ class Main:
             DumpIdx(args.i, args.o, args.t, args.q).dump()
         elif args.script == "UNPACK_APK":
             UnpackApk(args.i, args.o, args.e).extract()
-        elif args.script == "PATCH_APK":
-            PatchApk(args.i, args.o).patch()
-        elif args.script == "PACK_APK":
-            PackApk(args.i, args.o).pack()
-        elif args.script == "MAKE_IDX":
-            MakeIdx(args.i, args.o).make()
+        # elif args.script == "PATCH_APK":
+        #     PatchApk(args.i, args.o).patch()
+        # elif args.script == "PACK_APK":
+        #     PackApk(args.i, args.o).pack()
+        # elif args.script == "MAKE_IDX":
+        #     MakeIdx(args.i, args.o).make()
         else:
             print(help.HELP_ALL)
 
