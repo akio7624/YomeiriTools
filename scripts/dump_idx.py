@@ -1,3 +1,4 @@
+import hashlib
 import os
 from io import StringIO
 
@@ -19,8 +20,16 @@ class DumpIdx:
         self.IDX = IDX()
         self.file_size = 0
 
+        self.__original_md5 = None
+        self.__dumped_md5 = None
+
     def dump(self, debug_no_dump: bool = False):
         self.read()
+        self.__dumped_md5 = hashlib.md5(self.IDX.to_bytearray()).hexdigest()
+
+        if self.__original_md5 != self.__dumped_md5:
+            print("Warning! The original file and the dumped file do not match. The dump results may be inaccurate.")
+            print(f"{self.__original_md5} != {self.__dumped_md5}")
 
         if debug_no_dump:
             return
@@ -36,6 +45,8 @@ class DumpIdx:
             reader = BinaryReader(bytearray(f.read()))
             reader.seek(0)
             self.file_size = reader.size()
+
+        self.__original_md5 = hashlib.md5(reader.get_raw()).hexdigest()
 
         print("Reading ENDIANNESS table...")
         self.IDX.ENDIANNESS.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=16))
