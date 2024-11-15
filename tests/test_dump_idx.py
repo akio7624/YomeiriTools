@@ -32,5 +32,6 @@ class TestDumpApk(unittest.TestCase):
         self.assertEqual(original_size, dumped_size)
         self.assertEqual(original_md5, dumped_md5)
 
+
 if __name__ == '__main__':
     unittest.main()
