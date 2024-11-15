@@ -31,6 +31,9 @@ class BinaryReader:
     def EOF(self) -> bool:
         return self.__OFFSET + 1 >= self.size()
 
+    def get_raw(self) -> bytearray:
+        return copy.deepcopy(self.__RAW)
+
     def get_byte(self) -> int:
         if self.__OFFSET < self.size():
             result = self.__RAW[self.__OFFSET]
