@@ -801,6 +801,8 @@ class APKReader:
             ARCHIVE_OFFSET = int(seg.ARCHIVE_OFFSET)
             ARCHIVE_SIZE = int(seg.ARCHIVE_SIZE)
 
+            archive.ARCHIVE_ofs = int(seg.ARCHIVE_OFFSET)
+
             reader.seek(ARCHIVE_OFFSET)
 
             print(f"    Reading ENDIANNESS table...")
