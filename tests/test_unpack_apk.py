@@ -22,6 +22,11 @@ class TestDumpApk(unittest.TestCase):
         os.makedirs(outpath, exist_ok=True)
         UnpackApk(self.fs_apk_path, outpath, "overwrite").extract()
 
+    def test_stage_apk(self):
+        outpath = os.path.join(self.extract_path, "stage")
+        os.makedirs(outpath, exist_ok=True)
+        UnpackApk(self.stage_apk_path, outpath, "overwrite").extract()
+
 
 if __name__ == '__main__':
     unittest.main()
