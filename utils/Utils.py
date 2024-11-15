@@ -121,3 +121,7 @@ def archive_padding_type2desc(v: int) -> str:
         return "Padded archive to be divisible by 2048"
     elif v == 2:
         return "Padded archive to be divisible by 512"
+
+
+def get_name_from_name_idx(apk, name_idx: int) -> str:
+    return apk.GENESTRT.FILE_NAMES[name_idx][:-1]  # remove null
