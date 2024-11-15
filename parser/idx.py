@@ -1,6 +1,9 @@
+import hashlib
+
 from datatype.chararray import chararray
 from datatype.uint32 import uint32
 from datatype.uint64 import uint64
+from utils.BinaryManager import BinaryReader
 from utils.Utils import get_table_padding_count
 
 
@@ -487,6 +490,62 @@ class IDX:
                         self.SIGNATURE.to_bytearray() +
                         self.TABLE_SIZE.to_bytearray()
                     )
+
+
+class IDXReader:
+    def __init__(self, INPUT_IDX_PATH: str):
+        self.__INPUT_IDX_PATH = INPUT_IDX_PATH
+        self.__IDX = IDX()
+        self.__original_md5 = None
+    
+    def read(self):
+        with open(self.__INPUT_IDX_PATH, "rb") as f:
+            reader = BinaryReader(bytearray(f.read()))
+            reader.seek(0)
+
+        self.__original_md5 = hashlib.md5(reader.get_raw()).hexdigest()
+
+        print("Reading ENDIANNESS table...")
+        self.__IDX.ENDIANNESS.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=16))
+
+        print("Reading PACKHEDR table...")
+        while True:
+            tmp = reader.tell()
+            if reader.get_bytes(8).decode("ascii") != "PACKHEDR":
+                reader.seek(tmp)
+                break
+            reader.seek(tmp)
+            self.__IDX.PACKHEDR_LIST.add_from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=48))
+
+        print("Reading PACKTOC table...")
+        tmp = reader.tell()
+        reader.skip(8)
+        size = int(uint64(reader.get_bytes(8))) + 16
+        reader.seek(tmp)
+        self.__IDX.PACKTOC.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
+
+        print("Reading PACKFSLS table...")
+        tmp = reader.tell()
+        reader.skip(8)
+        size = int(uint64(reader.get_bytes(8))) + 16
+        reader.seek(tmp)
+        self.__IDX.PACKFSLS.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
+
+        print("Reading GENESTRT table...")
+        tmp = reader.tell()
+        reader.skip(8)
+        size = int(uint64(reader.get_bytes(8))) + 16
+        reader.seek(tmp)
+        self.__IDX.GENESTRT.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
+
+        print("Reading GENEEOF table...")
+        self.__IDX.GENEEOF.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=16))
+
+    def get_apk(self) -> IDX:
+        return self.__IDX
+
+    def get_original_md5(self) -> str:
+        return self.__original_md5
 
 
 class TableException(Exception):

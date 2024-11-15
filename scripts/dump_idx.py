@@ -6,7 +6,7 @@ from prettytable import PrettyTable
 
 from datatype.uint64 import uint64
 from utils.BinaryManager import BinaryReader
-from parser.idx import IDX
+from parser.idx import IDX, IDXReader
 from utils.ProgramInfo import *
 from utils.Utils import *
 
@@ -24,7 +24,11 @@ class DumpIdx:
         self.__dumped_md5 = None
 
     def dump(self, debug_no_dump: bool = False):
-        self.read()
+        idx_reader = IDXReader(self.INPUT_IDX_PATH)
+        idx_reader.read()
+        self.IDX = idx_reader.get_apk()
+
+        self.__original_md5 = idx_reader.get_original_md5()
         self.__dumped_md5 = hashlib.md5(self.IDX.to_bytearray()).hexdigest()
 
         if self.__original_md5 != self.__dumped_md5:
@@ -39,50 +43,6 @@ class DumpIdx:
         elif self.DUMP_TYPE == "json":
             print(f"JSON dumps are not supported yet.")
             pass  # TODO self.dump_json()
-
-    def read(self):
-        with open(self.INPUT_IDX_PATH, "rb") as f:
-            reader = BinaryReader(bytearray(f.read()))
-            reader.seek(0)
-            self.file_size = reader.size()
-
-        self.__original_md5 = hashlib.md5(reader.get_raw()).hexdigest()
-
-        print("Reading ENDIANNESS table...")
-        self.IDX.ENDIANNESS.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=16))
-
-        print("Reading PACKHEDR table...")
-        while True:
-            tmp = reader.tell()
-            if reader.get_bytes(8).decode("ascii") != "PACKHEDR":
-                reader.seek(tmp)
-                break
-            reader.seek(tmp)
-            self.IDX.PACKHEDR_LIST.add_from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=48))
-
-        print("Reading PACKTOC table...")
-        tmp = reader.tell()
-        reader.skip(8)
-        size = int(uint64(reader.get_bytes(8))) + 16
-        reader.seek(tmp)
-        self.IDX.PACKTOC.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
-
-        print("Reading PACKFSLS table...")
-        tmp = reader.tell()
-        reader.skip(8)
-        size = int(uint64(reader.get_bytes(8))) + 16
-        reader.seek(tmp)
-        self.IDX.PACKFSLS.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
-
-        print("Reading GENESTRT table...")
-        tmp = reader.tell()
-        reader.skip(8)
-        size = int(uint64(reader.get_bytes(8))) + 16
-        reader.seek(tmp)
-        self.IDX.GENESTRT.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=size))
-
-        print("Reading GENEEOF table...")
-        self.IDX.GENEEOF.from_bytearray(ofs=reader.tell(), src=reader.get_bytes(size=16))
 
     def dump_table(self):
         print("Start dumping...")
