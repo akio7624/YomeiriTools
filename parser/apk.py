@@ -517,6 +517,8 @@ class APK:
             for file in self.FILE_LIST:
                 result += file.to_bytearray()
 
+            result += self.PADDING
+
             return result
 
         def sort(self):
