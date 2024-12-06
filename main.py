@@ -55,9 +55,9 @@ class Main:
         parser_patch_apk.add_argument("-i", type=str, required=True, nargs=2)
         parser_patch_apk.add_argument("-o", type=str, required=True)
 
-        parser_pack_apk = subparser.add_parser("PACK_APK", add_help=False)
-        parser_pack_apk.add_argument("-i", type=str, required=True)
-        parser_pack_apk.add_argument("-o", type=str, required=True)
+        # parser_pack_apk = subparser.add_parser("PACK_APK", add_help=False)
+        # parser_pack_apk.add_argument("-i", type=str, required=True)
+        # parser_pack_apk.add_argument("-o", type=str, required=True)
 
         parser_make_idx = subparser.add_parser("MAKE_IDX", add_help=False)
         parser_make_idx.add_argument("-i", type=str, required=True, nargs="+")
