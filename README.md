@@ -60,16 +60,7 @@ Therefore, a base APK file is required, and changes are applied to a copy of thi
 This method is generally recommended when modifying files within an APK file.
 
 
-ymtools.exe PACK_APK -i <directory_for_pack> -o <output_path>
-
--i P  	path P of the directory to use for packing
--o P  	save the packed apk file in path P
-
-The 'PACK' method creates a new APK file using all files in the directory specified by the -i option.
-Therefore, a base APK file is not required, but this process may take longer if there are many files.
-
-
-ymtools.exe PACK_APK -i <input_apk_path ...> -o <output_path>
+ymtools.exe MAKE_IDX -i <input_apk_path ...> -o <output_path>
 
 -i P  	A listing of APK file paths to be used for generating the IDX file.
 -o P  	save the idx file in path P

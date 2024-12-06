@@ -58,19 +58,9 @@ ymtools.exe PATCH_APK -i <input_apk_path> <directory_for_pack> -o <output_path>
 이 방법은 APK 파일 내의 파일을 수정할 때 일반적으로 권장된다.
 
 
-ymtools.exe PACK_APK -i <directory_for_pack> -o <output_path>
+ymtools.exe MAKE_IDX -i <input_apk_path ...> -o <output_path>
 
--i P       IDX 파일 생성을 위해 사용할 APK 파일 경로의 나열이다.
--o P       패킹된 APK 파일을 경로 P에 저장한다.
-
-'PACK' 방식은 -i 옵션으로 지정된 디렉토리의 모든 파일을 사용하여 새로운 APK 파일을 생성한다.
-따라서 기본 APK 파일이 필요 없지만, 파일이 많을 경우 시간이 오래 걸릴 수 있다.
-
-
-ymtools.exe PACK_APK -i <input_apk_path ...> -o <output_path>
-
--i P       패킹에 사용할 APK 파일의 경로 P
-           이 파일은 변경되지 않는다.
+-i P       IDX 파일 생성에 사용될 apk 파일들의 경로 목록 P.
 -o P       IDX 파일을 경로 P에 저장한다.
 
 공백으로 구분된 APK 파일들로부터 IDX 파일을 생성한다.
