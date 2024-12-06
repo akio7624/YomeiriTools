@@ -1,3 +1,4 @@
+import copy
 import hashlib
 
 from datatype.chararray import chararray
@@ -196,6 +197,8 @@ class APK:
                 self.FILE_SIZE_ofs: int = 0
                 self.FILE_ZSIZE_ofs: int = 0
 
+                self.file_index: int = -1
+
             def from_bytearray(self, ofs: int, src: bytearray):
                 self.IDENTIFIER.from_bytearray(src[:4])
                 self.IDENTIFIER_ofs = ofs
@@ -262,6 +265,9 @@ class APK:
             self.ARCHIVE_SEGMENT_LIST_ofs: int = 0
             self.PADDING_ofs: int = 0
 
+            self.temp_name_idx_list = []
+            self.NAME_ARCHIVE_MAP = dict()
+
         def from_bytearray(self, ofs: int, src: bytearray):
             self.SIGNATURE.from_bytearray(src[:8])
             self.SIGNATURE_ofs = ofs
@@ -291,6 +297,8 @@ class APK:
                 seg.from_bytearray(ofs=ofs + seg_ofs, src=src[seg_ofs:seg_ofs + int(self.ARCHIVE_SEG_SIZE)])
                 self.ARCHIVE_SEGMENT_LIST.append(seg)
                 seg_ofs += int(self.ARCHIVE_SEG_SIZE)
+
+                self.temp_name_idx_list.append(int(seg.NAME_IDX))
 
             self.PADDING = src[seg_ofs:seg_ofs + get_table_padding_count(seg_ofs)]
             self.PADDING_ofs = ofs + seg_ofs
@@ -524,7 +532,6 @@ class APK:
         def sort(self):
             self.FILE_LIST.sort(key=lambda x: x.DATA_ofs)
 
-    # smae with _ROOT_FILES
     class _ARCHIVE_FILES:
         def __init__(self):
             self.FILE_LIST: list[APK._FILE] = list()
@@ -532,7 +539,7 @@ class APK:
 
             self.PADDING_ofs: int = 0
 
-        def add_from_bytearray(self, ofs: int, size: int, src: bytearray):
+        def add_from_bytearray(self, ofs: int, size: int, src: bytearray, seg):
             file = APK._FILE()
             file.from_bytearray(ofs, size, src)
             self.FILE_LIST.append(file)
@@ -650,6 +657,8 @@ class APK:
                 self.FILE_SIZE_ofs: int = 0
                 self.FILE_ZSIZE_ofs: int = 0
 
+                self.file_index = -1
+
             def from_bytearray(self, ofs: int, src: bytearray):
                 self.NAME_IDX.from_bytearray(src[:4])
                 self.NAME_IDX_ofs = ofs
@@ -686,6 +695,8 @@ class APK:
 
             self.ARCHIVE_ofs: int = 0
             self.PADDING_ofs: int = 0
+
+            self.name_idx: int = -1
 
         def to_bytearray(self) -> bytearray:
             return (
@@ -787,6 +798,13 @@ class APKReader:
 
             self.__APK.ROOT_FILES.sort()
 
+            ofs_list = [int(x.DATA_ofs) for x in self.__APK.ROOT_FILES.FILE_LIST]
+
+            for seg in self.__APK.PACKTOC.TOC_SEGMENT_LIST:
+                if int(seg.IDENTIFIER) == 1:
+                    continue
+                seg.file_index = ofs_list.index(int(seg.FILE_OFFSET))
+
         reader.seek(tmp + root_files_size)
         if reader.EOF():
             return
@@ -800,6 +818,7 @@ class APKReader:
         for idx, seg in enumerate(self.__APK.PACKFSLS.ARCHIVE_SEGMENT_LIST):
             print(f"Reading archive {idx + 1}/{len(self.__APK.PACKFSLS.ARCHIVE_SEGMENT_LIST)}...")
             archive = self.__APK.ARCHIVE()
+            archive.name_idx = int(seg.NAME_IDX)
             ARCHIVE_OFFSET = int(seg.ARCHIVE_OFFSET)
             ARCHIVE_SIZE = int(seg.ARCHIVE_SIZE)
 
@@ -845,9 +864,14 @@ class APKReader:
                     block_size = filesize + get_archive_file_padding_cnt(filesize)
                     archive_files_size += block_size
 
-                    archive.FILES.add_from_bytearray(ofs=real_file_offset, size=filesize, src=reader.get_bytes(block_size))
+                    archive.FILES.add_from_bytearray(ofs=real_file_offset, size=filesize, src=reader.get_bytes(block_size), seg=file_seg)
 
                 archive.FILES.sort()
+
+                ofs_list = [int(x.DATA_ofs) for x in archive.FILES.FILE_LIST]
+
+                for fseg in archive.PACKFSHD.FILE_SEGMENT_LIST:
+                    fseg.file_index = ofs_list.index(int(fseg.FILE_OFFSET) + ARCHIVE_OFFSET)
 
             reader.seek(tmp + archive_files_size)
 
@@ -860,11 +884,86 @@ class APKReader:
 
         self.__APK.ARCHIVES.sort()
 
+        for name_idx in self.__APK.PACKFSLS.temp_name_idx_list:
+            archive_name = self.__APK.GENESTRT.FILE_NAMES[int(name_idx)][:-1]
+
+            archive = None
+            for x in self.__APK.ARCHIVES.ARCHIVE_LIST:
+                if x.name_idx == name_idx:
+                    archive = x
+                    break
+
+            if archive is None:
+                raise Exception("archive not found")
+
+            self.__APK.PACKFSLS.NAME_ARCHIVE_MAP[archive_name] = archive
+
     def get_apk(self) -> APK:
         return self.__APK
 
     def get_original_md5(self) -> str:
         return self.__original_md5
+
+    def update_offsets(self):
+        NEW_OFFSET: int = -1
+
+        if len(self.__APK.PACKTOC.TOC_SEGMENT_LIST) > 0:
+            toc_seg_list = sorted(
+                [seg for seg in self.__APK.PACKTOC.TOC_SEGMENT_LIST if int(seg.IDENTIFIER) != 1],
+                key=lambda seg: int(seg.FILE_OFFSET)
+            )
+
+            if len(toc_seg_list) > 0:
+                NEW_OFFSET = int(toc_seg_list[0].FILE_OFFSET)
+
+                tmp_seg = toc_seg_list[0]
+                file_index = tmp_seg.file_index
+                NEW_OFFSET += len(self.__APK.ROOT_FILES.FILE_LIST[file_index].DATA)
+                NEW_OFFSET += len(self.__APK.ROOT_FILES.FILE_LIST[file_index].PADDING)
+
+                for seg in toc_seg_list[1:]:  # offset of first file is never change
+                    file_index = seg.file_index
+                    seg.FILE_OFFSET = uint64(NEW_OFFSET)
+                    NEW_OFFSET += len(self.__APK.ROOT_FILES.FILE_LIST[file_index].DATA)
+                    NEW_OFFSET += len(self.__APK.ROOT_FILES.FILE_LIST[file_index].PADDING)
+
+        if len(self.__APK.ARCHIVES.ARCHIVE_LIST) > 0:
+            for i, archive in enumerate(self.__APK.ARCHIVES.ARCHIVE_LIST):
+                print("=======================")
+                old_offset = int(archive.ARCHIVE_ofs)
+                if NEW_OFFSET == -1:
+                    NEW_OFFSET = int(archive.ARCHIVE_ofs)
+
+                archive_seg = [x for x in self.__APK.PACKFSLS.ARCHIVE_SEGMENT_LIST if int(x.ARCHIVE_OFFSET) == old_offset][0]
+                archive_seg.ARCHIVE_OFFSET = uint64(NEW_OFFSET)
+
+                seg_list = sorted(
+                    [seg for seg in archive.PACKFSHD.FILE_SEGMENT_LIST],
+                    key=lambda seg: int(seg.FILE_OFFSET)
+                )
+
+                NEW_FILE_OFFSET: int = int(seg_list[0].FILE_OFFSET)
+
+                tmp_seg = seg_list[0]
+                file_index = tmp_seg.file_index
+                NEW_FILE_OFFSET += len(archive.FILES.FILE_LIST[file_index].DATA)
+                NEW_FILE_OFFSET += len(archive.FILES.FILE_LIST[file_index].PADDING)
+                print(NEW_FILE_OFFSET)
+
+                for seg in seg_list[1:]:
+                    file_index = seg.file_index
+                    seg.FILE_OFFSET = uint64(NEW_FILE_OFFSET)
+                    NEW_FILE_OFFSET += len(archive.FILES.FILE_LIST[file_index].DATA)
+                    NEW_FILE_OFFSET += len(archive.FILES.FILE_LIST[file_index].PADDING)
+
+                if i + 1 < len(self.__APK.ARCHIVES.ARCHIVE_LIST):  # make padding without last archive
+                    archive.PADDING = bytearray(0)
+                    new_archive_size = len(archive.to_bytearray())
+                    archive_seg.ARCHIVE_SIZE = uint64(new_archive_size)
+
+                    new_padding_cnt = get_archive_padding_count(int(self.__APK.PACKHEDR.ARCHIVE_PADDING_TYPE), int(archive_seg.ARCHIVE_SIZE))
+                    archive.PADDING = bytearray(new_padding_cnt)
+                    NEW_OFFSET += new_archive_size + new_padding_cnt
 
 
 class TableException(Exception):
