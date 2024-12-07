@@ -2,6 +2,7 @@ import argparse
 from scripts import help
 from scripts.dump_apk import DumpApk
 from scripts.dump_idx import DumpIdx
+from scripts.make_idx import MakeIdx
 from scripts.patch_apk import PatchApk
 from scripts.unpack_apk import UnpackApk
 
@@ -25,8 +26,8 @@ class Main:
             PatchApk(args.i, args.o).patch()
         # elif args.script == "PACK_APK":
         #     PackApk(args.i, args.o).pack()
-        # elif args.script == "MAKE_IDX":
-        #     MakeIdx(args.i, args.o).make()
+        elif args.script == "MAKE_IDX":
+            MakeIdx(args.i, args.o).make()
         else:
             print(help.HELP_ALL)
 
