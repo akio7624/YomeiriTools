@@ -104,6 +104,7 @@ class IDX:
                         self.SIGNATURE.to_bytearray() +
                         self.TABLE_SIZE.to_bytearray() +
                         self.unknown_1 +
+                        self.NAME_IDX.to_bytearray() +
                         self.FILE_LIST_OFFSET.to_bytearray() +
                         self.ARCHIVE_PADDING_TYPE.to_bytearray() +
                         self.HASH
