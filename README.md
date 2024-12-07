@@ -8,6 +8,8 @@ Basically, these are scripts made for the game <Nisekoi Yomeiri!?> Korean patch,
 
 This README has been translated through a translator.
 
+# A known problem
+* If there are two or more apk with `TOC_SEG` present, there is a possibility that it will not be generated normally when generating IDX file.
 
 # Script Help
 ```
