@@ -21,6 +21,7 @@ class PatchApk:
         self.__dumped_md5 = None
 
     def patch(self):
+        print(f"Reading apk file {self.INPUT_APK_PATH}")
         apk_reader = APKReader(self.INPUT_APK_PATH)
         apk_reader.read()
         self.APK = apk_reader.get_apk()
@@ -33,9 +34,12 @@ class PatchApk:
             print("Warning! The original file and the dumped file do not match. The dump result may be inaccurate.")
             print(f"{self.__original_md5} != {self.__dumped_md5}")
 
+        print(f"Get changed file list...")
         changed_files = get_changed_file_path(self.INPUT_DIR_PATH)
+        print(f"{len(changed_files)} changed files.")
 
-        for changed_file in changed_files:
+        for idx, changed_file in enumerate(changed_files):
+            print(f"\r\033[KPatching...[{idx+1}/{len(changed_files)}] {changed_file}", end="")
             with open(os.path.join(self.INPUT_DIR_PATH, changed_file), 'rb') as f:
                 data = f.read()
 
@@ -78,9 +82,13 @@ class PatchApk:
                     padding_cnt = get_root_file_padding_cnt(len(file.DATA))
                     file.PADDING = copy.deepcopy(bytearray(padding_cnt))
 
+        print()
+
+        print("Update offsets...")
         apk_reader.update_offsets()
         self.APK = apk_reader.get_apk()
 
+        print("Write patched apk file...")
         with open(self.OUTPUT_PATCHED_PATH, "wb") as f:
             f.write(self.APK.to_bytearray())
 
