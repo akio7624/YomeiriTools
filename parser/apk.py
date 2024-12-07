@@ -62,6 +62,7 @@ class APK:
             self.SIGNATURE: chararray = chararray(size=8)
             self.TABLE_SIZE: uint64 = uint64(0)
             self.unknown_1: bytearray = bytearray()
+            self.NAME_IDX: uint32 = uint32()
             self.FILE_LIST_OFFSET: uint32 = uint32(0)
             self.ARCHIVE_PADDING_TYPE: uint32 = uint32(0)
             self.HASH: bytearray = bytearray()
@@ -69,6 +70,7 @@ class APK:
             self.SIGNATURE_ofs: int = 0
             self.TABLE_SIZE_ofs: int = 0
             self.unknown_1_ofs: int = 0
+            self.NAME_IDX_ofs: int = 0
             self.FILE_LIST_OFFSET_ofs: int = 0
             self.ARCHIVE_PADDING_TYPE_ofs: int = 0
             self.HASH_ofs: int = 0
@@ -85,8 +87,11 @@ class APK:
             if len(src) != int(self.TABLE_SIZE) + 16:
                 raise TableException(self, f"The table size mismatch.  this={len(src)} expected={int(self.TABLE_SIZE) + 16}")
 
-            self.unknown_1 = src[16:24]
+            self.unknown_1 = src[16:20]
             self.unknown_1_ofs = ofs + 16
+
+            self.NAME_IDX = uint32(src[20:24])
+            self.NAME_IDX_ofs = ofs + 20
 
             self.FILE_LIST_OFFSET.from_bytearray(src[24:28])
             self.FILE_LIST_OFFSET_ofs = ofs + 24
@@ -104,6 +109,7 @@ class APK:
                         self.SIGNATURE.to_bytearray() +
                         self.TABLE_SIZE.to_bytearray() +
                         self.unknown_1 +
+                        self.NAME_IDX.to_bytearray() +
                         self.FILE_LIST_OFFSET.to_bytearray() +
                         self.ARCHIVE_PADDING_TYPE.to_bytearray() +
                         self.HASH
