@@ -79,10 +79,11 @@ This method is generally recommended when modifying files within an APK file.
 # """
 
 HELP_MAKE_IDX = """
-ymtools.exe MAKE_IDX -i <input_apk_path ...> -o <output_path>
+ymtools.exe MAKE_IDX -i <input_apk_path ...> -o <output_path> -d <apk_parent_dir_name>
 
 -i P  \tA listing of APK file paths to be used for generating the IDX file.
 -o P  \tsave the idx file in path P
+-d N  \tName of the parent folder containing the source apk file N
       
 Generate IDX files from APK files separated by spaces.
 

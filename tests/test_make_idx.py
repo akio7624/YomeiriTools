@@ -16,7 +16,7 @@ class TextMakeIdx(unittest.TestCase):
         self.patched_idx_path = os.path.join(self.patched_path, "pack.idx")
 
     def test_make_idx(self):
-        MakeIdx([self.all_apk_path, self.fs_apk_path], self.patched_idx_path).make()
+        MakeIdx([self.all_apk_path, self.fs_apk_path], self.patched_idx_path, "pack").make()
 
 
 if __name__ == '__main__':

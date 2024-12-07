@@ -10,10 +10,10 @@ from utils.Utils import get_table_padding_count, get_archive_file_padding_cnt
 
 
 class MakeIdx:
-    def __init__(self, i: list[str], o: str):
+    def __init__(self, i: list[str], o: str, d: str):
         self.INPUT_APK_PATH_LIST = i
         self.OUTPUT_IDX_PATH = o
-        self.DIR_NAME = "pack"  # TODO 매개변수로 받기, 도움말 수정
+        self.DIR_NAME = d
         self.IDX = IDX()
         self.APK_LIST: list[APKReader] = []
 

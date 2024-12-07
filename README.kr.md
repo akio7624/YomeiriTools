@@ -58,10 +58,11 @@ ymtools.exe PATCH_APK -i <input_apk_path> <directory_for_pack> -o <output_path>
 이 방법은 APK 파일 내의 파일을 수정할 때 일반적으로 권장된다.
 
 
-ymtools.exe MAKE_IDX -i <input_apk_path ...> -o <output_path>
+ymtools.exe MAKE_IDX -i <input_apk_path ...> -o <output_path> -d <apk_parent_dir_name>
 
 -i P       IDX 파일 생성에 사용될 apk 파일들의 경로 목록 P.
 -o P       IDX 파일을 경로 P에 저장한다.
+-d N       원본 apk 파일을 포함하는 부모 폴더의 이름 N
 
 공백으로 구분된 APK 파일들로부터 IDX 파일을 생성한다.
 ```

@@ -27,7 +27,7 @@ class Main:
         # elif args.script == "PACK_APK":
         #     PackApk(args.i, args.o).pack()
         elif args.script == "MAKE_IDX":
-            MakeIdx(args.i, args.o).make()
+            MakeIdx(args.i, args.o, args.d).make()
         else:
             print(help.HELP_ALL)
 
@@ -63,6 +63,7 @@ class Main:
         parser_make_idx = subparser.add_parser("MAKE_IDX", add_help=False)
         parser_make_idx.add_argument("-i", type=str, required=True, nargs="+")
         parser_make_idx.add_argument("-o", type=str, required=True)
+        parser_make_idx.add_argument("-d", type=str, required=True)
 
 
 if __name__ == "__main__":

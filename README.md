@@ -60,10 +60,11 @@ Therefore, a base APK file is required, and changes are applied to a copy of thi
 This method is generally recommended when modifying files within an APK file.
 
 
-ymtools.exe MAKE_IDX -i <input_apk_path ...> -o <output_path>
+ymtools.exe MAKE_IDX -i <input_apk_path ...> -o <output_path> -d <apk_parent_dir_name>
 
--i P  	A listing of APK file paths to be used for generating the IDX file.
--o P  	save the idx file in path P
+-i P  A listing of APK file paths to be used for generating the IDX file.
+-o P  save the idx file in path P
+-d N  Name of the parent folder containing the source apk file N
       
 Generate IDX files from APK files separated by spaces.
 ```
