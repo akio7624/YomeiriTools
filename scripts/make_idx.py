@@ -22,6 +22,7 @@ class MakeIdx:
         self.IDX.ENDIANNESS.TABLE_SIZE = uint64(0)
 
         for apk_path in self.INPUT_APK_PATH_LIST:
+            print(f"Read apk file: {apk_path}")
             apk_reader = APKReader(apk_path)
             apk_reader.read()
 
@@ -30,6 +31,8 @@ class MakeIdx:
             self.IDX.PACKHEDR_LIST.PACKHEDR_LIST[-1].apk_name = self.DIR_NAME + "/" + os.path.basename(apk_path) + "\0"
 
             self.APK_LIST.append(apk_reader)
+
+        print("Packing idx file...")
 
         toc_seg_list = []  # Assume there is no duplicate seg between each apk file
         toc_seg_entry_index_increase = 0
@@ -133,5 +136,4 @@ class MakeIdx:
         with open(self.OUTPUT_IDX_PATH, 'wb') as f:
             f.write(result)
 
-
-
+        print("OK.")
