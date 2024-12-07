@@ -329,7 +329,7 @@ class APK:
         class _ARCHIVE_SEGMENT:
             def __init__(self):
                 self.NAME_IDX: uint32 = uint32(0)
-                self.ZERO: bytearray = bytearray()
+                self.ZERO: uint32 = uint32()
                 self.ARCHIVE_OFFSET: uint64 = uint64(0)
                 self.ARCHIVE_SIZE: uint64 = uint64(0)
                 self.HASH: bytearray = bytearray()
@@ -344,7 +344,7 @@ class APK:
                 self.NAME_IDX.from_bytearray(src[:4])
                 self.NAME_IDX_ofs = ofs
 
-                self.ZERO = src[4:8]
+                self.ZERO = uint32(src[4:8])
                 self.ZERO_ofs = ofs + 4
 
                 self.ARCHIVE_OFFSET.from_bytearray(src[8:16])
@@ -359,7 +359,7 @@ class APK:
             def to_bytearray(self) -> bytearray:
                 return (
                     self.NAME_IDX.to_bytearray() +
-                    self.ZERO +
+                    self.ZERO.to_bytearray() +
                     self.ARCHIVE_OFFSET.to_bytearray() +
                     self.ARCHIVE_SIZE.to_bytearray() +
                     self.HASH
